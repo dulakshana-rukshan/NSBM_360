@@ -65,3 +65,103 @@
   color: #002147;
   font-weight: bold;
 }
+
+.site-footer {
+  background-color: #052851;
+  color: #ffffff;
+  padding: 40px 50px 20px;
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding-bottom: 30px;
+}
+
+.footer-brand,
+.footer-links,
+.footer-contact {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-brand img {
+  width: 250px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 15px;
+}
+
+.site-footer h3 {
+  color: #33cc33;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.site-footer p {
+  color: #e5e7eb;
+  line-height: 1.6;
+}
+
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  margin-bottom: 10px;
+}
+
+.site-footer a {
+  color: #e5e7eb;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: #33cc33;
+}
+
+.contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-bottom {
+  border-top: 1px solid #52677f;
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.footer-bottom p {
+  margin: 0;
+}
+
+.footer-legal {
+  display: flex;
+  gap: 10px;
+}
+
+/* Responsive Footer */
+
+@media (max-width: 768px) {
+  .site-footer {
+    padding: 30px 20px 15px;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}
