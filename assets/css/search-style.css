@@ -1,0 +1,386 @@
+/* =========================================================
+   NSBM 360 - Search page (design from supplied reference)
+   This stylesheet is only used by search.php.
+   ========================================================= */
+
+/* 1. Colours and common page styles. */
+:root {
+    --navy: #162d45;
+    --green: #23875c;
+    --button-green: #29c63e;
+    --muted: #7b858f;
+    --page-bg: #f6f7fb;
+    --border: #e6e9ec;
+}
+
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--navy);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+button, select, input { font: inherit; }
+a { color: inherit; }
+
+/* 2. Page heading and breadcrumb. */
+.search-page {
+    width: min(1066px, calc(100% - 52px));
+    margin: 0 auto;
+    padding: 36px 0 42px;
+}
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 13px;
+    color: #89919a;
+    font-size: 11px;
+}
+.breadcrumb a { text-decoration: none; }
+.breadcrumb a:hover { color: var(--green); }
+.page-heading h1 {
+    margin: 0 0 8px;
+    font: 700 34px/1.2 Georgia, 'Times New Roman', serif;
+    color: #132e47;
+}
+.page-heading p {
+    margin: 0;
+    color: #79838b;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* 3. Main search input, selects and green Search button. */
+.search-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 25px 0 24px;
+    padding: 11px 12px;
+    background: #fff;
+    border: 1px solid #e9ebee;
+    border-radius: 7px;
+}
+.search-input-wrap {
+    display: flex;
+    align-items: center;
+    min-width: 100px;
+    flex: 1;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid #e1e4e7;
+    border-radius: 5px;
+    background: #fff;
+}
+.search-symbol {
+    margin-right: 10px;
+    color: #869099;
+    font-size: 23px;
+    line-height: 1;
+}
+.search-input-wrap input {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--navy);
+    font-size: 12px;
+}
+.search-input-wrap input::placeholder { color: #9ba2aa; }
+.search-input-wrap:focus-within { border-color: #79b994; }
+.toolbar-select {
+    width: 137px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #e1e4e7;
+    border-radius: 5px;
+    background: #fff;
+    color: #414b55;
+    cursor: pointer;
+    font-size: 12px;
+}
+.time-select { width: 137px; }
+.button-search {
+    min-width: 67px;
+    height: 38px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 5px;
+    background: var(--button-green);
+    color: #123528;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+.button-search:hover { background: #23b935; }
+.error-message {
+    margin: 0 0 18px;
+    padding: 12px 15px;
+    border: 1px solid #f1c8ca;
+    border-radius: 7px;
+    background: #fff0f1;
+    color: #963039;
+}
+
+/* 4. Sidebar + search results in two columns. */
+.search-layout {
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+}
+.filters-card {
+    padding: 21px 19px 18px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #fff;
+}
+.filters-card h2 {
+    margin: 0 0 14px;
+    color: #1b3650;
+    font-size: 17px;
+    font-weight: 500;
+}
+.filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 30px;
+    text-decoration: none;
+    color: #43505a;
+    font-size: 11px;
+}
+.filter-option:hover, .filter-option.active { color: #23875c; }
+.filter-checkbox {
+    display: inline-flex;
+    flex: 0 0 14px;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #e6e9ec;
+    border-radius: 2px;
+    background: #fff;
+    color: #fff;
+    font-size: 10px;
+    font-weight: bold;
+}
+.filter-option.active .filter-checkbox {
+    border-color: #239361;
+    background: #239361;
+}
+.filter-name { flex: 0 1 auto; }
+.filter-count { color: #8e979e; }
+.filter-option.active .filter-count { color: #31946b; }
+.reset-link {
+    display: inline-block;
+    margin-top: 13px;
+    color: #23875c;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+}
+.reset-link:hover { text-decoration: underline; }
+.filter-tip {
+    margin: 17px 0 0;
+    color: #9aa2a9;
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+/* 5. Result heading and sorting dropdown. */
+.results-column { min-width: 0; }
+.results-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 0 0 15px;
+    min-height: 19px;
+}
+.results-heading h2 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 500;
+}
+.sort-form { flex-shrink: 0; }
+.sort-form select {
+    max-width: 155px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #78828e;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+/* 6. White result cards, thumbnails, category tags and arrows. */
+.result-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 126px;
+    margin: 0 0 15px;
+    padding: 15px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+}
+.result-image {
+    flex: 0 0 134px;
+    width: 134px;
+    height: 94px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #e1efea;
+}
+.result-image img, .detail-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #cfe9da, #dee9f0);
+    color: #1a6550;
+    font-size: 17px;
+    letter-spacing: .2px;
+}
+.image-placeholder strong { margin-left: 4px; }
+.result-info { flex: 1; min-width: 0; }
+.result-badge {
+    display: inline-block;
+    padding: 4px 7px;
+    border-radius: 3px;
+    background: #e9f7ec;
+    color: #16834f;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+}
+.result-badge.clubs { background: #e9edf3; color: #2c5479; }
+.result-badge.academic { background: #e8f7ed; color: #188754; }
+.result-badge.events { background: #e7f7ed; color: #16834f; }
+.result-badge.announcements { background: #e7f7ed; color: #16834f; }
+.result-info h3 {
+    margin: 9px 0 7px;
+    color: #1b334c;
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 500;
+}
+.result-description {
+    overflow: hidden;
+    margin: 0 0 8px;
+    color: #889199;
+    font-size: 11px;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.result-meta {
+    margin: 0;
+    color: #858e97;
+    font-size: 10px;
+    line-height: 1.5;
+}
+.details-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 28px;
+    height: 40px;
+    margin-left: auto;
+    color: #228a61;
+    text-decoration: none;
+    font-size: 23px;
+    font-weight: 400;
+}
+.details-arrow:hover { transform: translateX(2px); }
+
+/* 7. Bottom status and numbered page links. */
+.page-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 22px 0 0;
+    color: #89939c;
+    font-size: 11px;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.pagination a {
+    color: #243e54;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.pagination a:hover, .pagination a.current {
+    color: #23875c;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.pagination a.current { font-weight: 700; }
+
+/* 8. Empty state and the View Details page. */
+.empty-results, .details-card {
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+}
+.empty-results h3 { margin: 0 0 8px; font-size: 17px; }
+.empty-results p { color: #85919a; font-size: 12px; }
+.empty-results a, .back-link, .registration-link { color: #208b5c; text-decoration: none; }
+.empty-results a:hover, .back-link:hover, .registration-link:hover { text-decoration: underline; }
+.back-link { display: block; margin-bottom: 20px; font-size: 13px; }
+.details-card h2 { margin: 14px 0 7px; font-size: 24px; }
+.details-card .result-meta { margin-bottom: 22px; }
+.detail-image { max-width: 100%; height: auto; max-height: 310px; object-fit: cover; border-radius: 7px; margin-bottom: 21px; }
+.detail-content { color: #455463; line-height: 1.8; overflow-wrap: anywhere; }
+.registration-link { display: inline-block; margin-top: 22px; }
+
+/* 9. Responsive layout for small screens. */
+@media (max-width: 800px) {
+    .search-layout { grid-template-columns: 175px minmax(0, 1fr); gap: 16px; }
+    .filters-card { padding: 19px 12px; }
+    .result-image { flex-basis: 106px; width: 106px; height: 90px; }
+    .result-card { gap: 13px; padding: 12px; }
+    .result-info h3 { font-size: 15px; }
+}
+@media (max-width: 650px) {
+    .search-page { width: calc(100% - 28px); padding: 22px 0; }
+    .search-toolbar { flex-wrap: wrap; }
+    .search-input-wrap { flex-basis: 100%; }
+    .toolbar-select { flex: 1; min-width: 100px; }
+    .button-search { flex: 0 0 auto; }
+    .search-layout { grid-template-columns: 1fr; }
+    .filters-card { padding: 17px; }
+    .filter-tip { display: none; }
+    .result-card { min-height: 110px; }
+    .page-navigation { align-items: flex-start; flex-direction: column; }
+}
+@media (max-width: 420px) {
+    .page-heading h1 { font-size: 29px; }
+    .result-image { flex-basis: 85px; width: 85px; height: 85px; }
+    .result-card { gap: 9px; }
+    .result-info h3 { font-size: 14px; }
+    .result-description { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .details-arrow { flex-basis: 18px; font-size: 20px; }
+}
