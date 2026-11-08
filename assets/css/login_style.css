@@ -1,0 +1,62 @@
+/* Page: LOGIN */
+/* ======================================================
+   NSBM 360 - Auth page styling
+   Shared visual language: campus photograph, navy, green.
+   Each requested stylesheet is self-contained.
+   ====================================================== */
+:root {
+    --navy: #05264a;
+    --green: #2cce35;
+    --green-dark: #218a55;
+    --pale-green: #e9f8ec;
+    --background: #f6f7fb;
+    --text: #172d45;
+    --muted: #7c838e;
+    --outline: #dfe3e9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); color: var(--text); font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.55; }
+a { color: var(--green-dark); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.auth-layout { max-width: 1320px; min-height: 100vh; margin: 0 auto; padding: 50px 42px; display: grid; grid-template-columns: minmax(340px, 500px) minmax(0, 1fr); gap: 65px; align-items: start; }
+/* Left campus introduction card */
+.campus-card { border-radius: 12px; overflow: hidden; background: var(--navy); color: white; }
+.campus-card > img { width: 100%; height: 360px; display: block; object-fit: cover; }
+.campus-card-content { min-height: 285px; padding: 30px 31px 38px; }
+.eyebrow { color: var(--green); font-size: 11px; font-weight: bold; letter-spacing: .2px; }
+.campus-card h2 { font: normal 31px/1.22 Georgia, 'Times New Roman', serif; color: white; margin: 23px 0 18px; }
+.campus-card p { font-size: 13px; color: #a8bcd1; max-width: 380px; line-height: 1.75; }
+/* Right forms and links */
+.auth-content { padding-top: 9px; min-width: 0; }
+.back-link { font-size: 13px; display: inline-block; margin-bottom: 24px; }
+h1 { font: normal 37px/1.2 Georgia, 'Times New Roman', serif; color: var(--navy); margin: 0 0 14px; }
+.lead { margin: 0 0 28px; color: var(--muted); font-size: 15px; }
+.field { margin-bottom: 19px; }
+.field label { display: block; font-size: 13px; font-weight: 700; color: #36404c; margin-bottom: 9px; }
+.field input, .field select, .field textarea { display: block; width: 100%; min-height: 43px; border: 1px solid var(--outline); border-radius: 6px; background: white; padding: 11px 13px; color: #303c4b; font: 14px Arial, Helvetica, sans-serif; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid #93d8a6; outline-offset: 0; border-color: #5dbb7d; }
+.field small { display: block; color: #9298a3; font-size: 11px; margin-top: 8px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.green-button { display: inline-flex; justify-content: center; align-items: center; background: var(--green); color: var(--navy); border: 0; border-radius: 5px; padding: 12px 18px; min-height: 43px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.green-button:hover { filter: brightness(.97); }
+.secondary-line { color: var(--muted); margin: 20px 0 0; font-size: 14px; }
+.secondary-line a, .below-password a { font-weight: 700; }
+.below-password { display: flex; justify-content: flex-end; margin: -4px 0 23px; font-size: 13px; }
+.notice { border-radius: 8px; font-size: 13px; line-height: 1.55; margin: 0 0 19px; padding: 14px 17px; }
+.notice.success { background: var(--pale-green); color: #357954; }
+.notice.success strong { color: var(--navy); }
+.notice.error { color: #992e2e; background: #fff0f0; border: 1px solid #e9c1c1; }
+.notice.local { background: #fff6dc; color: #765b14; border: 1px solid #ebd99b; overflow-wrap: anywhere; }
+.notice.local a { font-weight: bold; }
+.notice.info { margin: 28px 0 22px; padding: 17px 22px; }
+.help-text { font-size: 12px; color: var(--muted); line-height: 1.85; margin-top: 19px; }
+.key-icon { width: 56px; height: 56px; display: grid; place-items: center; font-size: 32px; border-radius: 8px; background: #e9f8ee; color: var(--green-dark); margin: 21px 0 26px; }
+/* Club request container: populated from clubs and role_requests database tables. */
+.role-panel { border: 1px solid var(--outline); border-radius: 8px; background: white; padding: 20px; margin: 4px 0 22px; }
+.panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 18px; }
+.panel-heading h3 { font-size: 17px; font-weight: 500; margin: 0; color: var(--navy); }
+.panel-heading span { background: #eef3fa; color: var(--navy); font-size: 10px; font-weight: bold; padding: 4px 7px; border-radius: 4px; }
+.role-panel .status { margin: 17px 0 0; }
+[hidden] { display: none !important; }
+@media (max-width: 1000px) { .auth-layout { gap: 32px; padding: 36px 25px; grid-template-columns: minmax(280px, .85fr) 1.15fr; } .campus-card > img { height: 290px; } .campus-card-content { min-height: 255px; } .campus-card h2 { font-size: 27px; } h1 { font-size: 31px; } }
+@media (max-width: 700px) { .auth-layout { display: flex; flex-direction: column; padding: 14px; gap: 25px; } .campus-card { width: 100%; } .campus-card > img { height: 195px; } .campus-card-content { min-height: auto; padding: 20px; } .campus-card h2 { font-size: 26px; margin: 10px 0; } .campus-card p { margin-bottom: 0; } .auth-content { width: 100%; padding: 0 2px 22px; } .two-col { grid-template-columns: 1fr; gap: 0; } h1 { font-size: 29px; } .lead { font-size: 14px; } }
