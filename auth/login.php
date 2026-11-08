@@ -1,20 +1,21 @@
 <?php
 /* ===========================================================
-   NSBM 360 - Login page
-   Uses columns in the EXISTING users table.
+   NSBM 360 - Login page (PDO Version with External DB & Header Integration)
    =========================================================== */
 session_start();
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// Change these details if your XAMPP MySQL settings are different.
-$dbHost = 'localhost';
-$dbUser = 'root';
-$dbPassword = '';
-$dbName = 'nsbm_360';
+// Include external database connection file (which provides $pdo)
+require_once '../config/database.php';
+
+// Define page specific CSS and Title for header.php
+$pageCSS = '/NSBM_360/assets/css/login_style.css';
+$pageTitle = 'Sign in | NSBM 360';
 
 // Small helper: escape user/database text before displaying it.
-function e($text) {
-    return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+if (!function_exists('e')) {
+    function e($text) {
+        return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+    }
 }
 
 // CSRF token ensures requests come from our form.
@@ -26,7 +27,7 @@ $error = '';
 $email = '';
 
 // Handle the sign-in form.
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($pdo) && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = (string)($_POST['password'] ?? '');
 
@@ -36,14 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter a valid email address and password.';
     } else {
         try {
-            // Find the login account by unique email address.
-            $db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
-            $db->set_charset('utf8mb4');
-            $stmt = $db->prepare('SELECT user_id, first_name, role, password FROM users WHERE email = ? LIMIT 1');
-            $stmt->bind_param('s', $email);
-            $stmt->execute();
-            $user = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
+            // Find the login account by unique email address using PDO
+            $stmt = $pdo->prepare('SELECT user_id, first_name, role, password FROM users WHERE email = ? LIMIT 1');
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
 
             // password_verify() works with the password_hash() value saved at registration.
             if ($user && password_verify($password, $user['password'])) {
@@ -67,31 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             // Same error for unknown email and incorrect password.
             $error = 'Incorrect email or password.';
-        } catch (mysqli_sql_exception $ex) {
+        } catch (PDOException $ex) {
             error_log($ex->getMessage());
             $error = 'Database connection failed. Check XAMPP and database settings.';
         }
     }
 }
-
-
 ?>
 <?php
-    $pageCSS = 'login_style.css';
-    $pageTitle = 'Sign in | NSBM 360';
-
-
     include '../includes/header.php';
 ?>
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Sign in | NSBM 360</title>
-    <link rel="stylesheet" href="login_style.css">
-</head>
-<body> -->
     <main class="auth-layout">
         <aside class="campus-card" aria-label="NSBM 360 community">
             <img src="../assets/image/login_page_image.jpg" alt="NSBM campus buildings and lake">
@@ -140,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </section>
     </main>
-</body>
 <?php
     include '../includes/footer.php';
 ?>
