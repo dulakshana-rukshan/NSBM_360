@@ -1,0 +1,2259 @@
+/* ==========================================
+
+   NSBM 360 - HOME PAGE STYLES
+
+========================================== */
+
+/* =========================
+
+   GOOGLE FONTS
+
+========================= */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap");
+
+/* ==========================================
+
+   01. WELCOME SECTION
+
+========================================== */
+
+.welcome-section {
+  position: relative;
+
+  width: calc(100% - 40px);
+
+  min-height: 400px;
+
+  margin: 20px;
+
+  padding: 55px 60px 85px;
+
+  display: flex;
+
+  align-items: center;
+
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 30, 32, 0.96) 0%,
+
+      rgba(0, 55, 48, 0.84) 35%,
+
+      rgba(0, 48, 42, 0.45) 65%,
+
+      rgba(0, 30, 32, 0.05) 100%
+    ),
+    var(--welcome-bg, url("/NSBM_360/assets/image/welcome-banner.jpg"));
+
+  background-size: cover;
+
+  background-position: center;
+
+  background-repeat: no-repeat;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+}
+
+/* Welcome Content */
+
+.welcome-content {
+  position: relative;
+
+  z-index: 1;
+
+  max-width: 680px;
+
+  color: #ffffff;
+}
+
+/* Small Tagline */
+
+.welcome-tagline {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 20px;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  letter-spacing: 3px;
+
+  color: #7df47d;
+}
+
+.tagline-line {
+  width: 28px;
+
+  height: 2px;
+
+  background-color: #33cc33;
+}
+
+/* Welcome Heading */
+
+.welcome-heading {
+  display: flex;
+
+  flex-direction: column;
+
+  margin: 0 0 22px;
+
+  line-height: 1.15;
+}
+
+.welcome-heading-top {
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 46px;
+
+  font-weight: 700;
+
+  letter-spacing: -1.5px;
+
+  color: #ffffff;
+}
+
+.welcome-heading-highlight {
+  font-family: "Playfair Display", Georgia, serif;
+
+  font-size: 65px;
+
+  font-weight: 700;
+
+  letter-spacing: -1px;
+
+  line-height: 1.2;
+
+  color: #33cc33;
+
+  overflow-wrap: anywhere;
+}
+
+/* Welcome Description */
+
+.welcome-description {
+  max-width: 520px;
+
+  margin: 0;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 16px;
+
+  font-weight: 400;
+
+  line-height: 1.8;
+
+  color: #e1ece9;
+}
+
+/* Social Links */
+
+.welcome-social-links {
+  position: absolute;
+
+  bottom: 27px;
+
+  left: 60px;
+
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 28px;
+}
+
+.welcome-social-links a {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  transition: color 0.25s ease;
+}
+
+.welcome-social-links a i {
+  font-size: 18px;
+
+  color: #33cc33;
+
+  transition: transform 0.25s ease;
+}
+
+.welcome-social-links a:hover {
+  color: #7df47d;
+}
+
+.welcome-social-links a:hover i {
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+
+   02. HOME HIGHLIGHTS LAYOUT
+
+========================================== */
+
+.home-highlights {
+  display: grid;
+
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+
+  gap: 24px;
+
+  margin: 35px 20px 45px;
+
+  align-items: start;
+}
+
+.latest-news-panel,
+.campus-activity-panel {
+  min-width: 0;
+}
+
+.home-section-heading {
+  display: flex;
+
+  align-items: end;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 16px;
+}
+
+.section-eyebrow {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #198754;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 2px;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 25px;
+
+  font-weight: 800;
+
+  color: #002147;
+}
+
+.view-all-news {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  color: #198754;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  text-decoration: none;
+
+  white-space: nowrap;
+
+  transition: color 0.25s ease;
+}
+
+.view-all-news:hover {
+  color: #33cc33;
+}
+
+/* ==========================================
+
+   03. LATEST NEWS SLIDER
+
+========================================== */
+
+.news-slider {
+  position: relative;
+
+  height: 390px;
+
+  overflow: hidden;
+
+  border-radius: 12px;
+
+  background: #052851;
+}
+
+/* News Slides */
+
+.news-slide {
+  position: absolute;
+
+  inset: 0;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition:
+    opacity 0.6s ease,
+    visibility 0.6s;
+}
+
+.news-slide.active {
+  opacity: 1;
+
+  visibility: visible;
+
+  z-index: 1;
+}
+
+/* News Images */
+
+.news-slide-image {
+  position: absolute;
+
+  inset: 0;
+
+  background-size: cover;
+
+  background-position: center;
+
+  background-repeat: no-repeat;
+
+  transition: transform 5s ease;
+}
+
+.news-slide.active .news-slide-image {
+  transform: scale(1.05);
+}
+
+/* Replace with actual news images */
+
+.news-image-one {
+  background-image: url("/NSBM_360/assets/image/news-1.jpg");
+}
+
+.news-image-two {
+  background-image: url("/NSBM_360/assets/image/news-2.jpg");
+}
+
+.news-image-three {
+  background-image: url("/NSBM_360/assets/image/news-3.jpg");
+}
+
+/* Image Overlay */
+
+.news-slide::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+    0deg,
+    rgba(0, 20, 35, 0.94) 0%,
+
+    rgba(0, 25, 40, 0.42) 55%,
+
+    rgba(0, 25, 40, 0.06) 100%
+  );
+}
+
+/* News Text */
+
+.news-slide-overlay {
+  position: absolute;
+
+  bottom: 42px;
+
+  left: 35px;
+
+  right: 35px;
+
+  z-index: 2;
+
+  color: #ffffff;
+}
+
+.news-category {
+  display: inline-block;
+
+  padding: 5px 12px;
+
+  margin-bottom: 12px;
+
+  background: #33cc33;
+
+  color: #002147;
+
+  border-radius: 4px;
+
+  font-size: 11px;
+
+  font-weight: 800;
+}
+
+.news-slide-overlay h3 {
+  margin: 0 0 10px;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 28px;
+
+  font-weight: 800;
+
+  line-height: 1.25;
+}
+
+.news-slide-overlay p {
+  max-width: 560px;
+
+  margin: 0 0 10px;
+
+  color: #e5e7eb;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+.news-date {
+  color: #c9d6dc;
+
+  font-size: 12px;
+}
+
+/* News Slider Arrows */
+
+.news-arrow {
+  position: absolute;
+
+  top: 50%;
+
+  z-index: 5;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 36px;
+
+  height: 36px;
+
+  padding: 0;
+
+  transform: translateY(-50%);
+
+  border: 1px solid rgba(255, 255, 255, 0.5);
+
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.3);
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+.news-prev {
+  left: 12px;
+}
+
+.news-next {
+  right: 12px;
+}
+
+.news-arrow:hover {
+  background: #33cc33;
+
+  color: #002147;
+}
+
+/* News Slider Dots */
+
+.news-dots {
+  position: absolute;
+
+  bottom: 14px;
+
+  left: 50%;
+
+  z-index: 5;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  transform: translateX(-50%);
+}
+
+.news-dot {
+  width: 8px;
+
+  height: 8px;
+
+  padding: 0;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.5);
+
+  cursor: pointer;
+
+  transition:
+    width 0.25s ease,
+    background 0.25s ease;
+}
+
+.news-dot.active {
+  width: 24px;
+
+  border-radius: 10px;
+
+  background: #33cc33;
+}
+
+/* ==========================================
+
+   04. CAMPUS LIVE & UPCOMING CARD
+
+========================================== */
+
+.campus-activity-card {
+  position: relative;
+
+  height: 390px;
+
+  padding: 18px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+
+  overflow: hidden;
+}
+
+/* Activity Slider Header */
+
+.activity-slider-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 12px;
+}
+
+.activity-label {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #198754;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.activity-pulse {
+  flex-shrink: 0;
+
+  width: 8px;
+
+  height: 8px;
+
+  background: #33cc33;
+
+  border-radius: 50%;
+
+  box-shadow: 0 0 0 4px #eaf8ea;
+}
+
+/* Activity Navigation Buttons */
+
+.activity-controls {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+.activity-controls button,
+.calendar-header button {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  width: 28px;
+
+  height: 28px;
+
+  padding: 0;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  color: #002147;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.activity-controls button:hover,
+.calendar-header button:hover {
+  background: #eaf8ea;
+
+  border-color: #33cc33;
+}
+
+/* Activity Slides */
+
+.activity-slide {
+  display: none;
+}
+
+.activity-slide.active {
+  display: block;
+}
+
+/* Upcoming Event Slide */
+
+.activity-status {
+  display: inline-block;
+
+  padding: 5px 10px;
+
+  margin-bottom: 14px;
+
+  border-radius: 4px;
+
+  background: #eaf8ea;
+
+  color: #198754;
+
+  font-size: 11px;
+
+  font-weight: 800;
+}
+
+.activity-slide > h3 {
+  margin: 0 0 12px;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 22px;
+
+  font-weight: 800;
+
+  line-height: 1.3;
+
+  color: #002147;
+}
+
+.activity-description {
+  margin-bottom: 18px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+  line-height: 1.7;
+}
+
+.activity-detail {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 12px;
+
+  color: #4b5563;
+
+  font-size: 12px;
+}
+
+.activity-detail i {
+  color: #198754;
+
+  font-size: 16px;
+}
+
+.activity-view-link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 10px;
+
+  color: #198754;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.activity-view-link:hover {
+  color: #33cc33;
+}
+
+/* Activity Slider Dots */
+
+.activity-dots {
+  position: absolute;
+
+  bottom: 10px;
+
+  left: 50%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  transform: translateX(-50%);
+}
+
+.activity-dot {
+  width: 7px;
+
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #d1d5db;
+}
+
+.activity-dot.active {
+  width: 19px;
+
+  border-radius: 8px;
+
+  background: #33cc33;
+}
+
+/* ==========================================
+
+   05. COMPACT INTERACTIVE CALENDAR
+
+========================================== */
+
+/* Calendar Month Header */
+
+.calendar-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 8px;
+}
+
+.calendar-header h3 {
+  margin: 0;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  color: #002147;
+}
+
+/* Calendar Grid */
+
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+
+  gap: 2px;
+
+  text-align: center;
+}
+
+.calendar-weekdays {
+  margin-bottom: 4px;
+
+  color: #6b7280;
+
+  font-size: 9px;
+
+  font-weight: 700;
+}
+
+.calendar-weekdays span {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 0;
+}
+
+/* Calendar Date Buttons */
+
+.calendar-day {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 27px;
+
+  height: 27px;
+
+  max-width: 100%;
+
+  margin: auto;
+
+  padding: 0;
+
+  border: 1px solid transparent;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: #1f2937;
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 11px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.calendar-day.has-event {
+  font-weight: 800;
+}
+
+.calendar-day:disabled {
+  cursor: default;
+}
+
+/* ==========================================
+
+   06. CALENDAR CATEGORY COLORS
+
+========================================== */
+
+/* Events - Green */
+
+.calendar-day.type-event {
+  background: #dcfce7;
+
+  border-color: #16a34a;
+
+  color: #166534;
+}
+
+/* Meetings - Blue */
+
+.calendar-day.type-meeting {
+  background: #dbeafe;
+
+  border-color: #2563eb;
+
+  color: #1d4ed8;
+}
+
+/* Academic / Exams - Orange */
+
+.calendar-day.type-academic {
+  background: #fef3c7;
+
+  border-color: #d97706;
+
+  color: #92400e;
+}
+
+/* Holidays - Red */
+
+.calendar-day.type-holiday {
+  background: #fee2e2;
+
+  border-color: #dc2626;
+
+  color: #b91c1c;
+}
+
+/* Sports - Purple */
+
+.calendar-day.type-sports {
+  background: #f3e8ff;
+
+  border-color: #9333ea;
+
+  color: #7e22ce;
+}
+
+/* Calendar Date Hover */
+
+.calendar-day.has-event:hover,
+.calendar-day.has-event:focus-visible {
+  transform: scale(1.08);
+
+  outline: 2px solid #002147;
+
+  outline-offset: 2px;
+}
+
+/* Calendar Event Details Box */
+
+.calendar-event-info {
+  min-height: 35px;
+
+  max-height: 54px;
+
+  overflow-y: auto;
+
+  margin-top: 7px;
+
+  padding: 7px;
+
+  border-radius: 6px;
+
+  background: #f5f7fa;
+
+  color: #4b5563;
+
+  font-size: 10px;
+
+  line-height: 1.5;
+
+  scrollbar-width: thin;
+}
+
+.calendar-event-info strong {
+  color: #002147;
+}
+
+/* Calendar Legend */
+
+.calendar-legend {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 4px 8px;
+
+  margin-top: 7px;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 4px;
+
+  color: #6b7280;
+
+  font-size: 9px;
+
+  white-space: nowrap;
+}
+
+.legend-dot {
+  display: inline-block;
+
+  flex-shrink: 0;
+
+  width: 7px;
+
+  height: 7px;
+
+  border-radius: 50%;
+}
+
+.legend-dot.event {
+  background: #16a34a;
+}
+
+.legend-dot.meeting {
+  background: #2563eb;
+}
+
+.legend-dot.academic {
+  background: #d97706;
+}
+
+.legend-dot.holiday {
+  background: #dc2626;
+}
+
+.legend-dot.sports {
+  background: #9333ea;
+}
+
+/* ==========================================
+
+   07. CALENDAR HOVER POPUP
+
+========================================== */
+
+.calendar-tooltip {
+  position: fixed;
+
+  z-index: 9999;
+
+  display: none;
+
+  width: 210px;
+
+  max-width: calc(100vw - 20px);
+
+  padding: 12px;
+
+  border: 1px solid #33cc33;
+
+  border-radius: 9px;
+
+  background: #002147;
+
+  color: #ffffff;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  font-family: "DM Sans", sans-serif;
+
+  font-size: 11px;
+
+  line-height: 1.6;
+
+  pointer-events: none;
+}
+
+.calendar-tooltip.show {
+  display: block;
+}
+
+.calendar-tooltip strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #33cc33;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.calendar-tooltip .tooltip-category {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #cbd5e1;
+
+  text-transform: capitalize;
+}
+
+.calendar-tooltip .tooltip-item + .tooltip-item {
+  margin-top: 8px;
+
+  padding-top: 8px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+
+   08. TABLET RESPONSIVE
+
+========================================== */
+
+@media (max-width: 1000px) {
+  .home-highlights {
+    grid-template-columns: 1fr;
+
+    gap: 25px;
+  }
+
+  .news-slider {
+    height: 370px;
+  }
+
+  .campus-activity-card {
+    height: auto;
+
+    min-height: 390px;
+
+    overflow: visible;
+  }
+
+  .activity-dots {
+    bottom: 12px;
+  }
+
+  .calendar-day {
+    width: 30px;
+
+    height: 30px;
+  }
+
+  .calendar-event-info {
+    max-height: 85px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Welcome Section */
+
+  .welcome-section {
+    width: calc(100% - 30px);
+
+    min-height: 380px;
+
+    margin: 15px;
+
+    padding: 40px 30px 95px;
+  }
+
+  .welcome-tagline {
+    font-size: 10px;
+
+    letter-spacing: 2px;
+  }
+
+  .welcome-heading-top {
+    font-size: 35px;
+  }
+
+  .welcome-heading-highlight {
+    font-size: 48px;
+  }
+
+  .welcome-description {
+    font-size: 14px;
+
+    max-width: 450px;
+  }
+
+  .welcome-social-links {
+    left: 30px;
+
+    bottom: 22px;
+
+    gap: 18px;
+  }
+
+  .welcome-social-links a {
+    font-size: 12px;
+  }
+
+  /* News Section */
+
+  .home-section-heading h2 {
+    font-size: 23px;
+  }
+
+  .news-slide-overlay h3 {
+    font-size: 25px;
+  }
+
+  .campus-activity-card {
+    padding: 20px;
+  }
+}
+
+/* ==========================================
+
+   09. MOBILE RESPONSIVE
+
+========================================== */
+
+@media (max-width: 480px) {
+  /* Welcome Section */
+
+  .welcome-section {
+    width: calc(100% - 24px);
+
+    min-height: 390px;
+
+    margin: 12px;
+
+    padding: 30px 20px 95px;
+
+    background-position: 60% center;
+  }
+
+  .welcome-tagline {
+    font-size: 9px;
+
+    letter-spacing: 1.5px;
+
+    gap: 8px;
+  }
+
+  .tagline-line {
+    width: 20px;
+  }
+
+  .welcome-heading-top {
+    font-size: 27px;
+  }
+
+  .welcome-heading-highlight {
+    font-size: 38px;
+
+    overflow-wrap: anywhere;
+  }
+
+  .welcome-description {
+    font-size: 13px;
+
+    line-height: 1.6;
+  }
+
+  /* Mobile Social Icons */
+
+  .welcome-social-links {
+    left: 20px;
+
+    right: 20px;
+
+    bottom: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: nowrap;
+
+    justify-content: flex-start;
+
+    gap: 14px;
+  }
+
+  .welcome-social-links a {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 42px;
+
+    height: 42px;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    border-radius: 50%;
+
+    text-decoration: none;
+  }
+
+  .welcome-social-links a span {
+    display: none;
+  }
+
+  .welcome-social-links a i {
+    font-size: 19px;
+
+    color: #33cc33;
+  }
+
+  .welcome-social-links a:hover {
+    background: rgba(51, 204, 51, 0.2);
+
+    border-color: #33cc33;
+  }
+
+  /* Home Highlights */
+
+  .home-highlights {
+    margin: 25px 12px 35px;
+
+    gap: 25px;
+  }
+
+  .home-section-heading h2 {
+    font-size: 21px;
+  }
+
+  .section-eyebrow {
+    font-size: 10px;
+  }
+
+  .view-all-news {
+    font-size: 11px;
+  }
+
+  /* News Slider */
+
+  .news-slider {
+    height: 350px;
+  }
+
+  .news-slide-overlay {
+    left: 22px;
+
+    right: 22px;
+
+    bottom: 40px;
+  }
+
+  .news-slide-overlay h3 {
+    font-size: 22px;
+  }
+
+  .news-slide-overlay p {
+    font-size: 12px;
+  }
+
+  .news-arrow {
+    width: 30px;
+
+    height: 30px;
+  }
+
+  .news-prev {
+    left: 8px;
+  }
+
+  .news-next {
+    right: 8px;
+  }
+
+  /* Activity Card */
+
+  .campus-activity-card {
+    padding: 16px;
+
+    min-height: 390px;
+  }
+
+  .activity-slide > h3 {
+    font-size: 20px;
+  }
+
+  .activity-description {
+    font-size: 12px;
+  }
+
+  /* Calendar */
+
+  .calendar-header h3 {
+    font-size: 14px;
+  }
+
+  .calendar-day {
+    width: 30px;
+
+    height: 30px;
+
+    font-size: 11px;
+  }
+
+  .calendar-legend {
+    gap: 5px 9px;
+  }
+
+  .calendar-event-info {
+    max-height: 80px;
+  }
+
+  .calendar-tooltip {
+    width: 190px;
+  }
+}
+
+/* ==========================================
+
+   10. SMALL MOBILE SCREENS
+
+========================================== */
+
+@media (max-width: 360px) {
+  .welcome-heading-top {
+    font-size: 24px;
+  }
+
+  .welcome-heading-highlight {
+    font-size: 34px;
+  }
+
+  .welcome-social-links {
+    gap: 10px;
+  }
+
+  .welcome-social-links a {
+    width: 38px;
+
+    height: 38px;
+  }
+
+  .home-section-heading h2 {
+    font-size: 19px;
+  }
+
+  .campus-activity-card {
+    padding: 12px;
+  }
+
+  .calendar-day {
+    width: 26px;
+
+    height: 26px;
+
+    font-size: 10px;
+  }
+
+  .calendar-legend span {
+    font-size: 8px;
+  }
+}
+
+/* ==========================================
+
+   11. EXPLORE CAMPUS SECTION
+
+========================================== */
+
+.explore-campus-section {
+  margin: 45px 20px 55px;
+
+  font-family: "DM Sans", sans-serif;
+}
+
+/* Section Heading */
+
+.explore-campus-heading {
+  margin-bottom: 24px;
+}
+
+.explore-campus-heading h2 {
+  margin: 0 0 8px;
+
+  font-size: 28px;
+
+  font-weight: 800;
+
+  color: #002147;
+}
+
+.explore-campus-heading p {
+  margin: 0;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+
+  color: #6b7280;
+}
+
+/* Cards Grid */
+
+.explore-campus-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 20px;
+}
+
+/* Individual Card */
+
+.explore-campus-card {
+  position: relative;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  min-width: 0;
+
+  min-height: 250px;
+
+  padding: 25px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  text-decoration: none;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.explore-campus-card:hover {
+  transform: translateY(-6px);
+
+  border-color: #33cc33;
+
+  box-shadow: 0 12px 30px rgba(0, 33, 71, 0.1);
+}
+
+.explore-campus-card:focus-visible {
+  outline: 3px solid #33cc33;
+
+  outline-offset: 3px;
+}
+
+/* Icon */
+
+.explore-card-icon {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 52px;
+
+  height: 52px;
+
+  margin-bottom: 20px;
+
+  background: #eaf8ea;
+
+  border-radius: 12px;
+
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.explore-card-icon i {
+  font-size: 25px;
+
+  color: #198754;
+}
+
+.explore-campus-card:hover .explore-card-icon {
+  background: #33cc33;
+
+  transform: scale(1.05);
+}
+
+.explore-campus-card:hover .explore-card-icon i {
+  color: #002147;
+}
+
+/* Card Heading */
+
+.explore-campus-card h3 {
+  margin: 0 0 10px;
+
+  font-size: 19px;
+
+  font-weight: 800;
+
+  color: #002147;
+}
+
+/* Description */
+
+.explore-campus-card p {
+  margin: 0 0 22px;
+
+  font-size: 13px;
+
+  line-height: 1.7;
+
+  color: #6b7280;
+}
+
+/* Explore Link */
+
+.explore-card-link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: auto;
+
+  color: #198754;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.explore-card-link i {
+  font-size: 14px;
+
+  transition: transform 0.3s ease;
+}
+
+.explore-campus-card:hover .explore-card-link i {
+  transform: translate(3px, -3px);
+}
+
+/* =========================
+
+   TABLET RESPONSIVE
+
+========================= */
+
+@media (max-width: 1000px) {
+  .explore-campus-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================
+
+   MOBILE RESPONSIVE
+
+========================= */
+
+@media (max-width: 480px) {
+  .explore-campus-section {
+    margin: 35px 12px 45px;
+  }
+
+  .explore-campus-heading h2 {
+    font-size: 23px;
+  }
+
+  .explore-campus-heading p {
+    font-size: 12px;
+  }
+
+  .explore-campus-grid {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+  .explore-campus-card {
+    min-height: 210px;
+
+    padding: 22px;
+  }
+
+  .explore-card-icon {
+    width: 46px;
+
+    height: 46px;
+
+    margin-bottom: 15px;
+  }
+
+  .explore-card-icon i {
+    font-size: 22px;
+  }
+
+  .explore-campus-card h3 {
+    font-size: 18px;
+  }
+}
+
+/* ==========================================
+
+   12. UPCOMING EVENTS SECTION
+
+========================================== */
+
+.upcoming-events-section {
+  margin: 45px 20px 60px;
+
+  font-family: "DM Sans", sans-serif;
+}
+
+/* =========================
+
+   SECTION HEADING
+
+========================= */
+
+.upcoming-events-heading {
+  display: flex;
+
+  align-items: end;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 24px;
+}
+
+.upcoming-events-heading h2 {
+  margin: 0 0 8px;
+
+  color: #002147;
+
+  font-size: 28px;
+
+  font-weight: 800;
+}
+
+.upcoming-events-heading p {
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+.view-all-events {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #198754;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  text-decoration: none;
+
+  white-space: nowrap;
+
+  transition: color 0.25s ease;
+}
+
+.view-all-events:hover {
+  color: #33cc33;
+}
+
+.view-all-events i {
+  transition: transform 0.25s ease;
+}
+
+.view-all-events:hover i {
+  transform: translate(3px, -3px);
+}
+
+/* =========================
+
+   EVENTS LIST
+
+========================= */
+
+.upcoming-events-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+/* =========================
+
+   EVENT CARD
+
+========================= */
+
+.upcoming-event-card {
+  display: flex;
+
+  align-items: center;
+
+  gap: 24px;
+
+  min-width: 0;
+
+  min-height: 125px;
+
+  padding: 16px 22px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 12px;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.upcoming-event-card:hover {
+  transform: translateY(-3px);
+
+  border-color: #33cc33;
+
+  box-shadow: 0 10px 25px rgba(0, 33, 71, 0.08);
+}
+
+/* =========================
+
+   DATE BADGE
+
+========================= */
+
+.event-date-badge {
+  flex-shrink: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 75px;
+
+  height: 78px;
+
+  background: #eaf8ea;
+
+  border-radius: 9px;
+}
+
+.event-date-day {
+  color: #002147;
+
+  font-size: 29px;
+
+  font-weight: 800;
+
+  line-height: 1.1;
+}
+
+.event-date-month {
+  color: #198754;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+/* =========================
+
+   EVENT CONTENT
+
+========================= */
+
+.upcoming-event-content {
+  flex: 1;
+
+  min-width: 0;
+}
+
+.upcoming-event-category {
+  display: inline-block;
+
+  margin-bottom: 7px;
+
+  color: #198754;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+.upcoming-event-content h3 {
+  margin: 0 0 12px;
+
+  color: #002147;
+
+  font-size: 19px;
+
+  font-weight: 800;
+
+  line-height: 1.35;
+}
+
+/* =========================
+
+   EVENT META DETAILS
+
+========================= */
+
+.upcoming-event-meta {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 8px 22px;
+}
+
+.upcoming-event-meta span {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+}
+
+.upcoming-event-meta i {
+  color: #198754;
+
+  font-size: 14px;
+}
+
+/* =========================
+
+   EVENT THUMBNAIL
+
+========================= */
+
+.upcoming-event-image {
+  flex-shrink: 0;
+
+  width: 135px;
+
+  height: 90px;
+
+  overflow: hidden;
+
+  border-radius: 8px;
+
+  background: #eaf8ea;
+}
+
+.upcoming-event-image img {
+  display: block;
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+
+  object-position: center;
+
+  transition: transform 0.4s ease;
+}
+
+.upcoming-event-card:hover .upcoming-event-image img {
+  transform: scale(1.06);
+}
+
+/* =========================
+
+   VIEW EVENT ARROW
+
+========================= */
+
+.upcoming-event-arrow {
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 36px;
+
+  height: 36px;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  color: #198754;
+
+  text-decoration: none;
+
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.upcoming-event-arrow i {
+  font-size: 16px;
+}
+
+.upcoming-event-arrow:hover,
+.upcoming-event-card:hover .upcoming-event-arrow {
+  background: #33cc33;
+
+  border-color: #33cc33;
+
+  color: #002147;
+}
+
+/* =========================
+
+   TABLET RESPONSIVE
+
+========================= */
+
+@media (max-width: 768px) {
+  .upcoming-event-card {
+    gap: 16px;
+
+    padding: 15px;
+  }
+
+  .event-date-badge {
+    width: 65px;
+
+    height: 70px;
+  }
+
+  .event-date-day {
+    font-size: 25px;
+  }
+
+  .upcoming-event-content h3 {
+    font-size: 17px;
+  }
+
+  .upcoming-event-image {
+    width: 100px;
+
+    height: 75px;
+  }
+
+  .upcoming-event-meta {
+    gap: 6px 14px;
+  }
+}
+
+/* =========================
+
+   MOBILE RESPONSIVE
+
+========================= */
+
+@media (max-width: 480px) {
+  .upcoming-events-section {
+    margin: 35px 12px 45px;
+  }
+
+  .upcoming-events-heading {
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+
+  .upcoming-events-heading h2 {
+    font-size: 22px;
+  }
+
+  .upcoming-events-heading p {
+    font-size: 12px;
+  }
+
+  .view-all-events {
+    font-size: 11px;
+
+    margin-top: 5px;
+  }
+
+  .upcoming-event-card {
+    gap: 12px;
+
+    padding: 12px;
+
+    min-height: 105px;
+  }
+
+  .event-date-badge {
+    width: 53px;
+
+    height: 60px;
+  }
+
+  .event-date-day {
+    font-size: 22px;
+  }
+
+  .event-date-month {
+    font-size: 9px;
+  }
+
+  .upcoming-event-content h3 {
+    font-size: 14px;
+
+    margin-bottom: 8px;
+  }
+
+  .upcoming-event-category {
+    font-size: 9px;
+
+    margin-bottom: 5px;
+  }
+
+  .upcoming-event-meta {
+    gap: 5px;
+  }
+
+  .upcoming-event-meta span {
+    font-size: 10px;
+  }
+
+  .upcoming-event-image {
+    display: none;
+  }
+
+  .upcoming-event-arrow {
+    width: 29px;
+
+    height: 29px;
+  }
+
+  .upcoming-event-arrow i {
+    font-size: 13px;
+  }
+}
+
+/* =========================
+   PREVENT HORIZONTAL OVERFLOW
+========================= */
+
+html {
+  width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.page-content {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Database-driven home page empty states */
+.home-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  text-align: center;
+}
+.upcoming-empty-state {
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  background: #fff;
+  text-align: center;
+}
