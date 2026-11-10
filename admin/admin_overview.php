@@ -113,7 +113,7 @@ include '..\includes\navbar.php';
         </div>
         <nav class="side-nav" aria-label="Administration">
             <a class="active" href="admin_overview.php">Overview</a>
-            <a href="admin_users&role_requests.php">Users & role requests</a>
+            <a href="admin_users_role_requests.php">Users & role requests</a>
             <a href="admin_clubs.php">Clubs & leadership</a>
             <a href="admin_officialnews.php">Official news</a>
             <a href="admin_announcements.php">Announcements</a>
@@ -197,7 +197,7 @@ include '..\includes\navbar.php';
                                 <td><?= esc(ucwords(str_replace('_',' ',$request['requested_role']))) ?></td>
                                 <td><?= esc($request['requested_at']) ?></td>
                                 <td class="actions">
-                                    <a href="admin_users&role_requests.php?review=<?= (int)$request['request_id'] ?>">Review</a>
+                                    <a href="admin_users_role_requests.php?review=<?= (int)$request['request_id'] ?>">Review</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -207,7 +207,7 @@ include '..\includes\navbar.php';
                     </tbody>
                 </table>
             </div>
-            <p class="manage-link"><a href="admin_users&role_requests.php">Manage users & role requests →</a></p>
+            <p class="manage-link"><a href="admin_users_role_requests.php">Manage users & role requests →</a></p>
         </section>
 
         <!-- TWO COLUMNS SECTION (CHARTS & ACTIVITY) -->
@@ -249,7 +249,7 @@ include '..\includes\navbar.php';
         <section class="panel">
             <h2>Management shortcuts</h2>
             <div class="shortcut-grid">
-                <a class="shortcut" href="admin_users&role_requests.php"><strong>Users & requests</strong><span>Review access and accounts</span><b>Manage users →</b></a>
+                <a class="shortcut" href="admin_users_role_requests.php"><strong>Users & requests</strong><span>Review access and accounts</span><b>Manage users →</b></a>
                 <a class="shortcut" href="admin_clubs.php"><strong>Clubs & leadership</strong><span>Assign Presidents and VPs</span><b>Manage clubs →</b></a>
                 <a class="shortcut" href="admin_officialnews.php"><strong>Official news</strong><span>Publish university updates</span><b>Manage news →</b></a>
                 <a class="shortcut" href="admin_announcements.php"><strong>Announcements</strong><span>Keep campus informed</span><b>Manage notices →</b></a>
