@@ -190,7 +190,7 @@ include __DIR__ . '/../includes/navbar.php';
 <main class="container py-5">
     <nav aria-label="breadcrumb" class="mb-2">
         <ol class="breadcrumb mb-1">
-            <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item"><a href="../index.php" class="text-decoration-none text-muted">Home</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($pageHeading) ?></li>
         </ol>
     </nav>
