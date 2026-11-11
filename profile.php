@@ -139,22 +139,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load the clubs this user belongs to and their assigned club role.
-$stmt = $conn->prepare('SELECT c.club_name, cm.club_role, cm.membership_status, cm.joined_at FROM club_memberships cm JOIN clubs c ON c.club_id = cm.club_id WHERE cm.user_id = ? ORDER BY cm.joined_at DESC');
-$stmt->bind_param('i', $userId);
-$stmt->execute();
-$memberships = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
+// Club memberships.
+$stmt = $pdo->prepare(
+    'SELECT c.club_name, cm.club_role,
+            cm.membership_status, cm.joined_at
+     FROM club_memberships cm
+     JOIN clubs c ON c.club_id = cm.club_id
+     WHERE cm.user_id = ?
+     ORDER BY cm.joined_at DESC'
+);
+$stmt->execute([$userId]);
+$memberships = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Count requests awaiting an administrator's decision.
-$stmt = $conn->prepare("SELECT COUNT(*) AS total FROM role_requests WHERE user_id = ? AND request_status = 'pending'");
-$stmt->bind_param('i', $userId);
-$stmt->execute();
-$pendingRequests = (int)$stmt->get_result()->fetch_assoc()['total'];
-$stmt->close();
-$conn->close();
+// Check whether the user has an active club leadership role.
+$canAccessDashboard = false;
 
-// Prepare display values from existing database columns.
+foreach ($memberships as $membership) {
+    $role = strtolower(trim($membership['club_role']));
+    $status = strtolower(trim($membership['membership_status']));
+
+    if (
+        $status === 'active' &&
+        in_array($role, ['president', 'vice_president'], true)
+    ) {
+        $canAccessDashboard = true;
+        break;
+    }
+}
+
+// Pending role requests.
+$stmt = $pdo->prepare(
+    "SELECT COUNT(*) AS total
+     FROM role_requests
+     WHERE user_id = ?
+       AND request_status = 'pending'"
+);
+$stmt->execute([$userId]);
+$pendingRequests = (int)$stmt->fetchColumn();
+
+// Display values.
 $fullName = trim($user['first_name'] . ' ' . $user['last_name']);
 $initials = strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1));
 $memberSince = date('d F Y', strtotime($user['created_at']));
@@ -241,7 +264,25 @@ $memberSince = date('d F Y', strtotime($user['created_at']));
                 <?php else: ?>
                     <p class="no-club">No club assignment found.</p>
                 <?php endif; ?>
-                <p class="request-count">Pending role requests: <?= (int)$pendingRequests ?></p>
+
+                <p class="request-count">
+                    Pending role requests:
+                    <?= (int)$pendingRequests ?>
+                </p>
+
+                <?php if ($canAccessDashboard): ?>
+
+                <a
+                    href="/NSBM_360/club/dashboard.php"
+                    class="club-dashboard-btn"
+                >
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+
+                <?php endif; ?>
+
             </section>
         </aside>
 
