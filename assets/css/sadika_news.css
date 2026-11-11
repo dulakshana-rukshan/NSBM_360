@@ -1,0 +1,367 @@
+/* General Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #F5F7FA;
+    color: #1F2937;
+    line-height: 1.6;
+}
+
+/* Page Wrapper */
+.page-wrapper {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.breadcrumb {
+    font-size: 12px;
+    color: #6B7280;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Content Grid Layout */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+/* Article Main Section */
+.article-category {
+    font-size: 12px;
+    font-weight: 700;
+    color: #198754;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.article-title {
+    font-size: 42px;
+    font-weight: 800;
+    color: #1F2937;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.article-subtitle {
+    font-size: 18px;
+    color: #4B5563;
+    margin-bottom: 25px;
+}
+
+/* Author Meta Info */
+.author-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-top: 1px solid #E5E7EB;
+    border-bottom: 1px solid #E5E7EB;
+    padding: 15px 0;
+    margin-bottom: 30px;
+}
+
+.author-avatar {
+    width: 40px;
+    height: 40px;
+    background: #002147;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.author-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.author-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F2937;
+}
+
+.post-date {
+    font-size: 12px;
+    color: #6B7280;
+}
+
+.share-actions button {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #374151;
+}
+
+/* Featured Image (Database Dynamic Images) */
+.featured-image-container {
+    margin-bottom: 30px;
+}
+
+.featured-image-container img {
+    width: 100%;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.img-caption {
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 8px;
+    display: block;
+}
+
+/* Article Body & Paragraphs */
+.article-body h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1F2937;
+    margin: 30px 0 15px 0;
+}
+
+.article-body p {
+    font-size: 16px;
+    color: #374151;
+    margin-bottom: 20px;
+}
+
+/* Quote Box */
+.quote-box {
+    background-color: #EAF8EA;
+    border-left: 4px solid #33CC33;
+    padding: 20px 25px;
+    margin: 30px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.quote-box p {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1F2937;
+    margin-bottom: 8px;
+}
+
+.quote-box cite {
+    font-size: 13px;
+    color: #198754;
+    font-style: normal;
+}
+
+/* Tags */
+.tags-row {
+    display: flex;
+    gap: 10px;
+    margin: 40px 0;
+}
+
+.tag {
+    background: #E5E7EB;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.sidebar-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 20px;
+}
+
+.event-card {
+    padding: 0;
+}
+
+.event-card-img img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.event-card-content {
+    padding: 20px;
+}
+
+.be-part-title {
+    font-size: 13px;
+    color: #6B7280;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.upcoming-badge {
+    background: #EAF8EA;
+    color: #198754;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.event-card-content h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #1F2937;
+}
+
+.event-card-content p {
+    font-size: 13px;
+    color: #4B5563;
+    margin-bottom: 15px;
+}
+
+.btn-green {
+    display: block;
+    text-align: center;
+    background: #33CC33;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.about-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.about-card p {
+    font-size: 13px;
+    color: #6B7280;
+    margin-bottom: 12px;
+}
+
+.about-card a {
+    font-size: 13px;
+    color: #33CC33;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Keep Exploring Section */
+.keep-exploring {
+    margin-top: 60px;
+    border-top: 1px solid #E5E7EB;
+    padding-top: 40px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.section-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.section-header a {
+    color: #33CC33;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.explore-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.explore-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.explore-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+}
+
+.explore-body {
+    padding: 15px;
+}
+
+.badge-academic, .badge-club, .badge-career {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 8px;
+    background: #EAF8EA;
+    color: #198754;
+}
+
+.explore-body h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.explore-body p {
+    font-size: 13px;
+    color: #6B7280;
+    margin-bottom: 12px;
+}
+
+.meta-info {
+    font-size: 11px;
+    color: #9CA3AF;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.explore-body a {
+    font-size: 13px;
+    color: #002147;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    .explore-grid {
+        grid-template-columns: 1fr;
+    }
+}
