@@ -1,9 +1,6 @@
 
 <?php
-// NSBM 360 Search page: uses the actual nsbm_360 database tables.
 
-// 1. Use the team's common PDO database connection.
-// No changes are required in config/database.php.
 require_once __DIR__ . '/config/database.php';
 
 // 2. Read and validate search filters from the URL.
@@ -273,9 +270,7 @@ foreach ($results as $item) {
     include 'includes/header.php';
 ?>
 
-<?php
-    include 'includes/navbar.php';
-?>
+
 
 <main class="search-page">
 
