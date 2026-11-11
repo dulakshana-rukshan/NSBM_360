@@ -1,0 +1,499 @@
+/* ================================================================
+   NSBM 360 - Public Clubs Listing
+   File: assets/css/sadika_clubs.css
+   Matches the classes used in clubs.php.
+
+   LOGO FEATURE:
+   - The green circle is visible normally.
+   - It disappears only while the mouse is over the club logo.
+   - It reappears when the cursor moves away.
+   ================================================================ */
+
+/* Main page area: avoids modifying the team's shared navbar/footer. */
+.clubs-main-container,
+.clubs-main-container * {
+    box-sizing: border-box;
+}
+
+.clubs-main-container {
+    width: min(1180px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 36px 0 76px;
+    color: #102b44;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------------------------
+   Page heading and breadcrumb
+   --------------------------------------------------------------- */
+.clubs-header-section {
+    margin-bottom: 28px;
+}
+
+.clubs-breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+    color: #77838d;
+    font-size: 13px;
+}
+
+.clubs-breadcrumb a {
+    color: #12804e;
+    text-decoration: none;
+}
+
+.clubs-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.clubs-page-title {
+    margin: 0 0 9px;
+    color: #072545;
+    font-size: clamp(30px, 3.4vw, 44px);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.clubs-page-subtitle {
+    margin: 0;
+    color: #657581;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------
+   Search form / status filter
+   --------------------------------------------------------------- */
+.clubs-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #e2e9e6;
+    border-radius: 14px;
+    box-shadow: 0 3px 16px rgba(4, 35, 46, 0.04);
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1 1 460px;
+    min-width: 0;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
+    color: #72828b;
+    font-size: 22px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.search-input {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 14px 11px 45px;
+    background: #ffffff;
+    border: 1px solid #dbe3e2;
+    border-radius: 8px;
+    color: #102b44;
+    font: inherit;
+    font-size: 14px;
+}
+
+.search-input:focus,
+.filter-select:focus {
+    outline: 2px solid rgba(51, 204, 51, 0.35);
+    outline-offset: 1px;
+    border-color: #18a74a;
+}
+
+.filter-dropdowns {
+    flex: 0 0 180px;
+}
+
+.filter-select {
+    min-height: 44px;
+    width: 100%;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #dbe3e2;
+    border-radius: 8px;
+    color: #253d4e;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.search-btn {
+    min-height: 44px;
+    padding: 10px 23px;
+    background: #2dcc32;
+    border: 1px solid #2dcc32;
+    border-radius: 8px;
+    color: #062d1c;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.search-btn:hover {
+    background: #19b928;
+    border-color: #19b928;
+}
+
+/* ---------------------------------------------------------------
+   Sorting and results count
+   --------------------------------------------------------------- */
+.clubs-sort-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: 22px 0 15px;
+    color: #697987;
+    font-size: 13px;
+}
+
+.sort-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    color: #173a4b;
+}
+
+.sort-wrapper .filter-select {
+    min-width: 150px;
+    min-height: 37px;
+    padding: 6px 9px;
+    font-size: 13px;
+}
+
+.clubs-meta-bar {
+    margin: 0 0 17px;
+    color: #73808b;
+    font-size: 13px;
+}
+
+/* ---------------------------------------------------------------
+   Club cards
+   --------------------------------------------------------------- */
+.clubs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.club-card {
+    min-width: 0;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e0e8e4;
+    border-radius: 14px;
+    box-shadow: 0 7px 22px rgba(4, 35, 46, 0.065);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.club-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(4, 35, 46, 0.11);
+}
+
+.card-image-wrapper {
+    position: relative;
+    height: 190px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.club-banner-fallback {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(125deg, #007747 0%, #159e6c 55%, #bce8d4 100%);
+}
+
+.club-banner {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.club-card .card-body {
+    padding: 24px 20px 20px;
+}
+
+.card-top-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+    margin-bottom: 16px;
+}
+
+/* ---------------------------------------------------------------
+   GREEN CLUB LOGO RING (requested hover effect)
+   --------------------------------------------------------------- */
+.club-avatar {
+    position: relative;
+    display: flex;
+    flex: 0 0 62px;
+    width: 62px;
+    height: 62px;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    border-radius: 50%;
+    background: #e7f5eb;
+}
+
+/* Green circle is shown by default without changing logo size. */
+.club-avatar--green-ring {
+    outline: 2px solid #33cc33;
+    outline-offset: 3px;
+    transition: outline-color 0.25s ease;
+}
+
+/* Hide ONLY the green ring while hovering on the logo. */
+.club-avatar--green-ring:hover {
+    outline-color: transparent;
+}
+
+/* The logo remains circular and visible during hover. */
+.club-profile-img {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Initials remain as a fallback if no image exists or the image fails. */
+.club-default-icon {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #0a7644;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.club-titles {
+    min-width: 0;
+}
+
+.club-name {
+    overflow-wrap: anywhere;
+    margin: 0 0 5px;
+    color: #0b2c45;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.club-category {
+    color: #73818b;
+    font-size: 12px;
+}
+
+.club-desc {
+    display: -webkit-box;
+    min-height: 63px;
+    overflow: hidden;
+    margin: 0 0 20px;
+    color: #5c6d78;
+    font-size: 13px;
+    line-height: 1.65;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+.club-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.clubs-members {
+    color: #6d7d87;
+    font-size: 12px;
+}
+
+.badge-open,
+.badge-inactive {
+    flex-shrink: 0;
+    padding: 6px 9px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.badge-open {
+    background: #e3f6e9;
+    color: #16804e;
+}
+
+.badge-inactive {
+    background: #f2f3f5;
+    color: #7e8790;
+}
+
+.explore-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #087e50;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.explore-link:hover {
+    color: #055d3b;
+    text-decoration: underline;
+}
+
+.clubs-empty-state {
+    grid-column: 1 / -1;
+    padding: 42px 20px;
+    border: 1px dashed #bed8cb;
+    border-radius: 12px;
+    background: #f7fcf9;
+    color: #60766b;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------------
+   Pagination
+   --------------------------------------------------------------- */
+.clubs-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.clubs-page-count {
+    color: #7d8992;
+    font-size: 13px;
+}
+
+.clubs-pagination {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.clubs-pagination .pagination-link {
+    display: inline-flex;
+    min-height: 33px;
+    min-width: 33px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 9px;
+    border-radius: 6px;
+    color: #1d4352;
+    font-size: 13px;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.clubs-pagination .pagination-link:hover {
+    background: #e8f6e9;
+}
+
+.clubs-pagination .active .pagination-link {
+    background: #dff5e6;
+    color: #007347;
+    font-weight: 700;
+}
+
+.clubs-pagination .disabled .pagination-link {
+    color: #a9b3b9;
+    pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   Responsive layouts
+   --------------------------------------------------------------- */
+@media (max-width: 980px) {
+    .clubs-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .clubs-main-container {
+        width: min(100% - 24px, 1180px);
+        padding: 24px 0 50px;
+    }
+
+    .clubs-filter-bar {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .search-input-wrapper {
+        flex-basis: 100%;
+    }
+
+    .filter-dropdowns {
+        flex: 1 1 auto;
+    }
+
+    .search-btn {
+        flex: 0 0 auto;
+    }
+
+    .clubs-sort-bar {
+        flex-wrap: wrap;
+    }
+
+    .clubs-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .clubs-pagination-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Respect people who prefer less animation. */
+@media (prefers-reduced-motion: reduce) {
+    .club-card,
+    .club-avatar--green-ring,
+    .search-btn,
+    .clubs-pagination .pagination-link {
+        transition: none;
+    }
+}
