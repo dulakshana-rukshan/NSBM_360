@@ -263,6 +263,22 @@ $stmt = $pdo->prepare(
 $stmt->execute([$userId]);
 $memberships = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Check whether the user has an active club leadership role.
+$canAccessDashboard = false;
+
+foreach ($memberships as $membership) {
+    $role = strtolower(trim($membership['club_role']));
+    $status = strtolower(trim($membership['membership_status']));
+
+    if (
+        $status === 'active' &&
+        in_array($role, ['president', 'vice_president'], true)
+    ) {
+        $canAccessDashboard = true;
+        break;
+    }
+}
+
 // Pending role requests.
 $stmt = $pdo->prepare(
     "SELECT COUNT(*) AS total
@@ -456,6 +472,19 @@ include __DIR__ . '/includes/header.php';
                     Pending role requests:
                     <?= (int)$pendingRequests ?>
                 </p>
+
+                <?php if ($canAccessDashboard): ?>
+
+                <a
+                    href="/NSBM_360/club/dashboard.php"
+                    class="club-dashboard-btn"
+                >
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+
+                <?php endif; ?>
 
             </section>
 
