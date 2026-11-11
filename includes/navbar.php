@@ -4,7 +4,7 @@ $activePage = $activePage ?? '';
 
 // Navigation links used in desktop and mobile.
 $navItems = [
-    ['label' => 'Home',     'page' => 'home',     'url' => '/NSBM_360/pages/index.php',    'icon' => 'bi-house'],
+    ['label' => 'Home',     'page' => 'home',     'url' => '/NSBM_360/index.php',    'icon' => 'bi-house'],
     ['label' => 'Events',   'page' => 'events',   'url' => '/NSBM_360/pages/events.php',   'icon' => 'bi-calendar-event'],
     ['label' => 'Clubs',    'page' => 'clubs',    'url' => '/NSBM_360/pages/clubs.php',    'icon' => 'bi-people'],
     ['label' => 'News',     'page' => 'news',     'url' => '/NSBM_360/pages/news.php',     'icon' => 'bi-newspaper'],
