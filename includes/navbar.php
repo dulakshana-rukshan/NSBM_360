@@ -4,18 +4,50 @@ $activePage = $activePage ?? '';
 
 // Navigation links used in desktop and mobile.
 $navItems = [
-    ['label' => 'Home',     'page' => 'home',     'url' => '/NSBM_360/index.php',    'icon' => 'bi-house'],
-    ['label' => 'Events',   'page' => 'events',   'url' => '/NSBM_360/pages/events.php',   'icon' => 'bi-calendar-event'],
-    ['label' => 'Clubs',    'page' => 'clubs',    'url' => '/NSBM_360/pages/clubs.php',    'icon' => 'bi-people'],
-    ['label' => 'News',     'page' => 'news',     'url' => '/NSBM_360/pages/news.php',     'icon' => 'bi-newspaper'],
-    ['label' => 'Sports',   'page' => 'sports',   'url' => '/NSBM_360/pages/sports.php',   'icon' => 'bi-trophy'],
-    ['label' => 'Academic', 'page' => 'academic', 'url' => '/NSBM_360/pages/academic.php', 'icon' => 'bi-mortarboard']
+    [
+        'label' => 'Home',
+        'page' => 'home',
+        'url' => '/NSBM_360/index.php',
+        'icon' => 'bi-house'
+    ],
+    [
+        'label' => 'Events',
+        'page' => 'events',
+        'url' => '/NSBM_360/pages/events.php',
+        'icon' => 'bi-calendar-event'
+    ],
+    [
+        'label' => 'Clubs',
+        'page' => 'clubs',
+        'url' => '/NSBM_360/pages/clubs.php',
+        'icon' => 'bi-people'
+    ],
+    [
+        'label' => 'News',
+        'page' => 'news',
+        'url' => '/NSBM_360/pages/news.php',
+        'icon' => 'bi-newspaper'
+    ],
+    [
+        'label' => 'Sports',
+        'page' => 'sports',
+        'url' => '/NSBM_360/pages/sports.php',
+        'icon' => 'bi-trophy'
+    ],
+    [
+        'label' => 'Academic',
+        'page' => 'academic',
+        'url' => '/NSBM_360/pages/academic.php',
+        'icon' => 'bi-mortarboard'
+    ]
 ];
 ?>
 
 <nav class="site-navbar" aria-label="Main navigation">
 
-    <!-- Mobile Hamburger Button -->
+    <!-- =========================
+         MOBILE HAMBURGER BUTTON
+    ========================= -->
     <button
         type="button"
         class="navbar-menu-toggle"
@@ -27,9 +59,13 @@ $navItems = [
         <i class="bi bi-list"></i>
     </button>
 
-    <!-- Desktop Navigation -->
+    <!-- =========================
+         DESKTOP NAVIGATION LINKS
+    ========================= -->
     <ul class="nav-links">
+
         <?php foreach ($navItems as $item): ?>
+
             <li>
                 <a
                     href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"
@@ -39,16 +75,22 @@ $navItems = [
                     <?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>
                 </a>
             </li>
+
         <?php endforeach; ?>
+
     </ul>
 
-    <!-- Navbar Right -->
+    <!-- =========================
+         NAVBAR RIGHT
+    ========================= -->
     <div class="navbar-right">
 
+        <!-- LOCATION -->
         <span class="navbar-location">
             Homagama, Sri Lanka
         </span>
 
+        <!-- SEARCH BAR -->
         <form
             class="navbar-search"
             action="/NSBM_360/search.php"
@@ -67,18 +109,56 @@ $navItems = [
             >
         </form>
 
+        <!-- =========================
+             ANNOUNCEMENT BELL
+        ========================= -->
+        <a
+            href="/NSBM_360/pages/announcements.php"
+            class="navbar-notification <?= $activePage === 'announcements' ? 'active' : '' ?>"
+            aria-label="View campus announcements"
+            title="Campus Announcements"
+            <?= $activePage === 'announcements' ? 'aria-current="page"' : '' ?>
+        >
+
+            <?php if ($activePage === 'announcements'): ?>
+
+                <!-- Green Filled Bell -->
+                <i class="bi bi-bell-fill"></i>
+
+            <?php else: ?>
+
+                <!-- White Outline Bell -->
+                <i class="bi bi-bell"></i>
+
+            <?php endif; ?>
+
+            <!--
+                RED NOTIFICATION DOT
+
+                This will be enabled when new
+                announcements are available.
+
+                <span class="notification-dot"></span>
+            -->
+
+        </a>
+
     </div>
 
 </nav>
 
-<!-- Mobile Sidebar Backdrop -->
+<!-- =========================
+     MOBILE SIDEBAR BACKDROP
+========================= -->
 <div
     class="mobile-nav-backdrop"
     id="mobileNavBackdrop"
     aria-hidden="true"
 ></div>
 
-<!-- Mobile Sidebar -->
+<!-- =========================
+     MOBILE SIDEBAR
+========================= -->
 <aside
     class="mobile-nav-sidebar"
     id="mobileNavSidebar"
@@ -86,6 +166,8 @@ $navItems = [
     aria-hidden="true"
     inert
 >
+
+    <!-- MOBILE SIDEBAR HEADER -->
     <div class="mobile-nav-header">
 
         <span class="mobile-nav-title">
@@ -103,8 +185,11 @@ $navItems = [
 
     </div>
 
+    <!-- MOBILE SIDEBAR LINKS -->
     <ul class="mobile-nav-links">
+
         <?php foreach ($navItems as $item): ?>
+
             <li>
                 <a
                     href="<?= htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8') ?>"
@@ -118,9 +203,12 @@ $navItems = [
                     </span>
                 </a>
             </li>
+
         <?php endforeach; ?>
+
     </ul>
 
+    <!-- MOBILE SIDEBAR FOOTER -->
     <div class="mobile-nav-footer">
         <i class="bi bi-geo-alt"></i>
         Homagama, Sri Lanka
@@ -128,8 +216,12 @@ $navItems = [
 
 </aside>
 
+<!-- =========================
+     MOBILE NAVIGATION SCRIPT
+========================= -->
 <script>
 (function () {
+
     const toggle = document.getElementById('navbarMenuToggle');
     const sidebar = document.getElementById('mobileNavSidebar');
     const backdrop = document.getElementById('mobileNavBackdrop');
@@ -142,6 +234,7 @@ $navItems = [
     let previousFocus = null;
 
     function openSidebar() {
+
         previousFocus = document.activeElement;
 
         sidebar.inert = false;
@@ -158,6 +251,7 @@ $navItems = [
     }
 
     function closeSidebar() {
+
         sidebar.classList.remove('is-open');
         backdrop.classList.remove('is-visible');
 
@@ -168,23 +262,27 @@ $navItems = [
         sidebar.inert = true;
         document.body.classList.remove('mobile-nav-open');
 
-        if (previousFocus && typeof previousFocus.focus === 'function') {
+        if (previousFocus &&
+            typeof previousFocus.focus === 'function') {
             previousFocus.focus();
         }
     }
 
     toggle.addEventListener('click', function () {
+
         if (sidebar.classList.contains('is-open')) {
             closeSidebar();
         } else {
             openSidebar();
         }
+
     });
 
     closeButton.addEventListener('click', closeSidebar);
     backdrop.addEventListener('click', closeSidebar);
 
     document.addEventListener('keydown', function (event) {
+
         if (!sidebar.classList.contains('is-open')) {
             return;
         }
@@ -194,6 +292,7 @@ $navItems = [
         }
 
         if (event.key === 'Tab') {
+
             const focusable = Array.from(
                 sidebar.querySelectorAll(
                     'a[href], button:not([disabled])'
@@ -207,10 +306,17 @@ $navItems = [
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
 
-            if (event.shiftKey && document.activeElement === first) {
+            if (event.shiftKey &&
+                document.activeElement === first) {
+
                 event.preventDefault();
                 last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
+
+            } else if (
+                !event.shiftKey &&
+                document.activeElement === last
+            ) {
+
                 event.preventDefault();
                 first.focus();
             }
@@ -218,18 +324,30 @@ $navItems = [
     });
 
     // Close sidebar when switching to desktop size.
-    const desktopQuery = window.matchMedia('(min-width: 992px)');
+    const desktopQuery =
+        window.matchMedia('(min-width: 992px)');
 
     function handleViewportChange(event) {
-        if (event.matches && sidebar.classList.contains('is-open')) {
+
+        if (event.matches &&
+            sidebar.classList.contains('is-open')) {
             closeSidebar();
         }
     }
 
     if (desktopQuery.addEventListener) {
-        desktopQuery.addEventListener('change', handleViewportChange);
+
+        desktopQuery.addEventListener(
+            'change',
+            handleViewportChange
+        );
+
     } else {
-        desktopQuery.addListener(handleViewportChange);
+
+        desktopQuery.addListener(
+            handleViewportChange
+        );
     }
+
 })();
 </script>
