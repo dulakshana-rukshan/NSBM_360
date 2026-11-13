@@ -195,7 +195,84 @@ include 'includes/navbar.php';
 
 
     </section>
+<!-- =========================
+     CAMPUS ANNOUNCEMENTS
+========================= -->
 
+<section class="home-announcements">
+
+    <div class="announcement-bar">
+
+        <div class="announcement-top">
+            <div class="announcement-label">
+                <i class="bi bi-megaphone"></i>
+
+                <div class="announcement-heading">
+                    <h2>Campus Announcements</h2>
+                    <span>IMPORTANT CAMPUS UPDATES</span>
+                </div>
+            </div>
+
+            <a href="/NSBM_360/pages/announcements.php"
+               class="announcement-view-all">
+                View All <i class="bi bi-arrow-up-right"></i>
+            </a>
+        </div>
+
+        <div class="announcement-slider" id="announcementSlider">
+
+            <div class="announcement-slide active">
+                <span class="announcement-important">IMPORTANT</span>
+                <h3>Examination Registration Deadline</h3>
+                <p>All students are requested to complete examination registration before the deadline.</p>
+            </div>
+
+            <div class="announcement-slide">
+                <span class="announcement-important">IMPORTANT</span>
+                <h3>Updated Academic Timetable</h3>
+                <p>Please review the latest academic timetable and important schedule changes.</p>
+            </div>
+
+            <div class="announcement-slide">
+                <span class="announcement-important">IMPORTANT</span>
+                <h3>Campus Facilities Notice</h3>
+                <p>Important updates regarding campus facilities and student services.</p>
+            </div>
+
+        </div>
+
+        <div class="announcement-bottom">
+
+            <div class="announcement-dots">
+                <button class="announcement-dot active" type="button"
+                        aria-label="Announcement 1"></button>
+                <button class="announcement-dot" type="button"
+                        aria-label="Announcement 2"></button>
+                <button class="announcement-dot" type="button"
+                        aria-label="Announcement 3"></button>
+            </div>
+
+            <div class="announcement-actions">
+                <span class="announcement-counter" id="announcementCounter">
+                    01 / 03
+                </span>
+
+                <button type="button" id="announcementPrev"
+                        aria-label="Previous announcement">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <button type="button" id="announcementNext"
+                        aria-label="Next announcement">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
 
    
 <!-- =========================
