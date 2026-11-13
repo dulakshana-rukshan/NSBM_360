@@ -140,7 +140,7 @@ function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPag
                             <p class="card-text text-muted small flex-grow-1"><?= htmlspecialchars($post['summary']) ?></p>
                             <div class="mt-3">
                                 <p class="text-custom-muted mb-2"><?= date('d M Y', strtotime($post['created_at'])) ?></p>
-                                <a href="read-story.php?id=<?= $post['post_id'] ?>" class="read-story-link">Read story &rarr;</a>
+                                <a href="news_details.php?id=<?= $post['post_id'] ?>" class="read-story-link">Read story &rarr;</a>
                             </div>
                         </div>
                     </div>
@@ -190,7 +190,7 @@ include __DIR__ . '/../includes/navbar.php';
 <main class="container py-5">
     <nav aria-label="breadcrumb" class="mb-2">
         <ol class="breadcrumb mb-1">
-            <li class="breadcrumb-item"><a href="../index.php" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Home</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($pageHeading) ?></li>
         </ol>
     </nav>
