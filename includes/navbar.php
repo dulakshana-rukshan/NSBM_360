@@ -2,7 +2,62 @@
 <?php
 $activePage = $activePage ?? '';
 
-// Navigation links used in desktop and mobile.
+// =========================
+// SESSION
+// =========================
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// =========================
+// DATABASE CONNECTION
+// =========================
+
+if (!isset($pdo)) {
+    require_once __DIR__ . '/../config/database.php';
+}
+
+// =========================
+// ANNOUNCEMENT NOTIFICATIONS
+// =========================
+
+$hasNewAnnouncements = false;
+
+if (isset($pdo) && $pdo instanceof PDO) {
+
+    $announcementStmt = $pdo->query("
+        SELECT MAX(announcement_id)
+        FROM announcements
+        WHERE status = 'published'
+          AND (expires_at IS NULL OR expires_at > NOW())
+    ");
+
+    $latestAnnouncementId = (int) $announcementStmt->fetchColumn();
+
+    $lastSeenAnnouncementId =
+        (int) ($_SESSION['last_seen_announcement_id'] ?? 0);
+
+    if ($activePage === 'announcements') {
+
+        // Mark all current announcements as seen
+        $_SESSION['last_seen_announcement_id'] = max(
+            $lastSeenAnnouncementId,
+            $latestAnnouncementId
+        );
+
+    } else {
+
+        // Show notification dot when new announcements exist
+        $hasNewAnnouncements =
+            $latestAnnouncementId > $lastSeenAnnouncementId;
+    }
+}
+
+// =========================
+// NAVIGATION LINKS
+// =========================
+
 $navItems = [
     [
         'label' => 'Home',
@@ -48,6 +103,7 @@ $navItems = [
     <!-- =========================
          MOBILE HAMBURGER BUTTON
     ========================= -->
+
     <button
         type="button"
         class="navbar-menu-toggle"
@@ -62,6 +118,7 @@ $navItems = [
     <!-- =========================
          DESKTOP NAVIGATION LINKS
     ========================= -->
+
     <ul class="nav-links">
 
         <?php foreach ($navItems as $item): ?>
@@ -83,14 +140,17 @@ $navItems = [
     <!-- =========================
          NAVBAR RIGHT
     ========================= -->
+
     <div class="navbar-right">
 
         <!-- LOCATION -->
+
         <span class="navbar-location">
             Homagama, Sri Lanka
         </span>
 
         <!-- SEARCH BAR -->
+
         <form
             class="navbar-search"
             action="/NSBM_360/search.php"
@@ -112,6 +172,7 @@ $navItems = [
         <!-- =========================
              ANNOUNCEMENT BELL
         ========================= -->
+
         <a
             href="/NSBM_360/pages/announcements.php"
             class="navbar-notification <?= $activePage === 'announcements' ? 'active' : '' ?>"
@@ -122,24 +183,19 @@ $navItems = [
 
             <?php if ($activePage === 'announcements'): ?>
 
-                <!-- Green Filled Bell -->
                 <i class="bi bi-bell-fill"></i>
 
             <?php else: ?>
 
-                <!-- White Outline Bell -->
                 <i class="bi bi-bell"></i>
 
             <?php endif; ?>
 
-            <!--
-                RED NOTIFICATION DOT
-
-                This will be enabled when new
-                announcements are available.
+            <?php if ($hasNewAnnouncements): ?>
 
                 <span class="notification-dot"></span>
-            -->
+
+            <?php endif; ?>
 
         </a>
 
@@ -150,6 +206,7 @@ $navItems = [
 <!-- =========================
      MOBILE SIDEBAR BACKDROP
 ========================= -->
+
 <div
     class="mobile-nav-backdrop"
     id="mobileNavBackdrop"
@@ -159,6 +216,7 @@ $navItems = [
 <!-- =========================
      MOBILE SIDEBAR
 ========================= -->
+
 <aside
     class="mobile-nav-sidebar"
     id="mobileNavSidebar"
@@ -168,6 +226,7 @@ $navItems = [
 >
 
     <!-- MOBILE SIDEBAR HEADER -->
+
     <div class="mobile-nav-header">
 
         <span class="mobile-nav-title">
@@ -186,6 +245,7 @@ $navItems = [
     </div>
 
     <!-- MOBILE SIDEBAR LINKS -->
+
     <ul class="mobile-nav-links">
 
         <?php foreach ($navItems as $item): ?>
@@ -209,6 +269,7 @@ $navItems = [
     </ul>
 
     <!-- MOBILE SIDEBAR FOOTER -->
+
     <div class="mobile-nav-footer">
         <i class="bi bi-geo-alt"></i>
         Homagama, Sri Lanka
@@ -219,6 +280,7 @@ $navItems = [
 <!-- =========================
      MOBILE NAVIGATION SCRIPT
 ========================= -->
+
 <script>
 (function () {
 
@@ -324,6 +386,7 @@ $navItems = [
     });
 
     // Close sidebar when switching to desktop size.
+
     const desktopQuery =
         window.matchMedia('(min-width: 992px)');
 
