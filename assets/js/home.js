@@ -512,6 +512,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   const slider = document.getElementById("announcementSlider");
+
   if (!slider) return;
 
   const slides = slider.querySelectorAll(".announcement-slide");
@@ -520,10 +521,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const prevBtn = document.getElementById("announcementPrev");
   const nextBtn = document.getElementById("announcementNext");
 
-  if (!slides.length) return;
+  if (slides.length === 0) return;
 
   let currentIndex = 0;
-  let timer;
+  let timer = null;
 
   function showSlide(index) {
     currentIndex = (index + slides.length) % slides.length;
@@ -544,10 +545,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function startTimer() {
-    clearInterval(timer);
+  function stopTimer() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
 
-    if (slides.length > 1) {
+  function startTimer() {
+    stopTimer();
+
+    if (slides.length > 1 && !document.hidden) {
       timer = setInterval(() => {
         showSlide(currentIndex + 1);
       }, 5000);
@@ -564,12 +572,29 @@ document.addEventListener("DOMContentLoaded", function () {
     startTimer();
   });
 
-  dots.forEach((dot, i) => {
+  dots.forEach((dot, index) => {
     dot.addEventListener("click", () => {
-      showSlide(i);
+      showSlide(index);
       startTimer();
     });
   });
+
+  slider.addEventListener("mouseenter", stopTimer);
+  slider.addEventListener("mouseleave", startTimer);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
+  });
+
+  // Hide navigation buttons when only one announcement exists
+  if (slides.length === 1) {
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+  }
 
   showSlide(0);
   startTimer();
