@@ -1,13 +1,18 @@
 
 <?php
 
-/** Escape values before displaying them in HTML. */
+/**
+ * Escape values before displaying them in HTML.
+ */
 function e($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-/** Return a CSRF token for a form. */
+
+/**
+ * Return a CSRF token for a form.
+ */
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf_token'])) {
@@ -17,7 +22,10 @@ function csrf_token(): string
     return $_SESSION['csrf_token'];
 }
 
-/** Check the CSRF token submitted by a form. */
+
+/**
+ * Check the CSRF token submitted by a form.
+ */
 function csrf_is_valid(): bool
 {
     return isset($_POST['csrf_token'], $_SESSION['csrf_token'])
@@ -25,7 +33,10 @@ function csrf_is_valid(): bool
         && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
 }
 
-/** Return the length of text, using mbstring when available. */
+
+/**
+ * Return the length of text, using mbstring when available.
+ */
 function text_length(string $value): int
 {
     return function_exists('mb_strlen')
@@ -33,7 +44,10 @@ function text_length(string $value): int
         : strlen($value);
 }
 
-/** Format a date for display. */
+
+/**
+ * Format a date for display.
+ */
 function display_date(?string $value): string
 {
     if (!$value) {
@@ -47,7 +61,10 @@ function display_date(?string $value): string
         : date('d M Y', $timestamp);
 }
 
-/** Return a CSS class for an allowed post status. */
+
+/**
+ * Return a CSS class for an allowed post status.
+ */
 function post_status_class(string $status): string
 {
     $allowed = ['draft', 'published', 'archived'];
@@ -57,7 +74,10 @@ function post_status_class(string $status): string
         : 'status-draft';
 }
 
-/** Save an uploaded JPG, PNG or WEBP image. */
+
+/**
+ * Save an uploaded JPG, PNG or WEBP post image.
+ */
 function save_post_image(array $file): ?string
 {
     if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
@@ -93,7 +113,7 @@ function save_post_image(array $file): ?string
         throw new RuntimeException('Please upload a JPG, PNG or WEBP image.');
     }
 
-    $directory = __DIR__ . '/uploads/posts';
+    $directory = __DIR__ . '/../uploads/posts';
 
     if (
         !is_dir($directory) &&
@@ -104,6 +124,7 @@ function save_post_image(array $file): ?string
     }
 
     $filename = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
+
     $destination = $directory . '/' . $filename;
 
     if (!move_uploaded_file($temporaryPath, $destination)) {
@@ -113,35 +134,136 @@ function save_post_image(array $file): ?string
     return 'uploads/posts/' . $filename;
 }
 
-/** Delete only an image inside the uploads/posts directory. */
+
+/**
+ * Delete only an image inside the uploads/posts directory.
+ */
 function delete_post_image(?string $relativePath): void
 {
     if (!$relativePath) {
         return;
     }
 
-    $filename = basename($relativePath);
-
-    // Only accept the expected relative path format.
     if (
-        !preg_match('/^uploads\/posts\/[a-f0-9]{32}\.(jpg|png|webp)$/', $relativePath)
+        !preg_match(
+            '~^uploads/posts/[a-f0-9]{32}\.(jpg|png|webp)$~',
+            $relativePath
+        )
     ) {
         return;
     }
 
-    $fullPath = __DIR__ . '/uploads/posts/' . $filename;
+    $filename = basename($relativePath);
+
+    $fullPath = __DIR__ . '/../uploads/posts/' . $filename;
 
     if (is_file($fullPath)) {
         unlink($fullPath);
     }
 }
 
-/** Display a friendly setup error. */
+
+/**
+ * Save an uploaded club banner or logo.
+ *
+ * $type must be either 'banner' or 'logos'.
+ */
+function save_club_image(array $file, string $type): ?string
+{
+    if (!in_array($type, ['banner', 'logos'], true)) {
+        throw new InvalidArgumentException('Invalid club image type.');
+    }
+
+    if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('The club image upload failed. Please try again.');
+    }
+
+    $maxBytes = 5 * 1024 * 1024;
+
+    if (($file['size'] ?? 0) > $maxBytes) {
+        throw new RuntimeException('The club image must be 5 MB or smaller.');
+    }
+
+    $temporaryPath = $file['tmp_name'] ?? '';
+
+    if (!$temporaryPath || !is_uploaded_file($temporaryPath)) {
+        throw new RuntimeException('The uploaded club image is not valid.');
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($temporaryPath);
+
+    $allowed = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp'
+    ];
+
+    if (!isset($allowed[$mime]) || getimagesize($temporaryPath) === false) {
+        throw new RuntimeException('Please upload a JPG, PNG or WEBP image.');
+    }
+
+    $directory = __DIR__ . '/../uploads/clubs/' . $type;
+
+    if (
+        !is_dir($directory) &&
+        !mkdir($directory, 0755, true) &&
+        !is_dir($directory)
+    ) {
+        throw new RuntimeException('The club image folder could not be created.');
+    }
+
+    $filename = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
+
+    $destination = $directory . '/' . $filename;
+
+    if (!move_uploaded_file($temporaryPath, $destination)) {
+        throw new RuntimeException('The club image could not be saved. Check folder permissions.');
+    }
+
+    return 'uploads/clubs/' . $type . '/' . $filename;
+}
+
+
+/**
+ * Delete only an image inside uploads/clubs/banner or uploads/clubs/logos.
+ */
+function delete_club_image(?string $relativePath): void
+{
+    if (!$relativePath) {
+        return;
+    }
+
+    if (
+        !preg_match(
+            '~^uploads/clubs/(banner|logos)/[a-f0-9]{32}\.(jpg|png|webp)$~',
+            $relativePath
+        )
+    ) {
+        return;
+    }
+
+    $fullPath = __DIR__ . '/../' . $relativePath;
+
+    if (is_file($fullPath)) {
+        unlink($fullPath);
+    }
+}
+
+
+/**
+ * Display a friendly access error.
+ */
 function show_access_message(
     int $statusCode,
     string $heading,
     string $message
 ): never {
+
     http_response_code($statusCode);
 
     echo '<!DOCTYPE html>';
@@ -150,7 +272,7 @@ function show_access_message(
     echo '<meta charset="UTF-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
     echo '<title>NEWS 360 Setup</title>';
-    echo '<link rel="stylesheet" href="/NSBM_360/club/president.css">';
+    echo '<link rel="stylesheet" href="/NSBM_360/assets/css/president.css">';
     echo '</head>';
     echo '<body>';
 
@@ -159,10 +281,6 @@ function show_access_message(
     echo '<p class="eyebrow">NEWS 360 · PRESIDENT WORKSPACE</p>';
     echo '<h1>' . e($heading) . '</h1>';
     echo '<p>' . e($message) . '</p>';
-
-    echo '<p class="setup-help">';
-    echo 'Check <a href="/NSBM_360/check_database.php">the database setup checker</a> for more information.';
-    echo '</p>';
 
     echo '<a class="button button-primary" href="/NSBM_360/auth/login.php">Go to login</a>';
 
@@ -173,3 +291,5 @@ function show_access_message(
 
     exit;
 }
+
+?>
