@@ -721,3 +721,65 @@ body.mobile-nav-open {
     width: min(290px, 85vw);
   }
 }
+
+/* =========================
+   PREVENT HORIZONTAL OVERFLOW
+========================= */
+
+html {
+  width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.page-content {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Database-driven home page empty states */
+.home-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  text-align: center;
+}
+.upcoming-empty-state {
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  background: #fff;
+  text-align: center;
+}
+
+.navbar-notification {
+  position: relative;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #ff3b30;
+  border: 2px solid #002147;
+  border-radius: 50%;
+  pointer-events: none;
+}

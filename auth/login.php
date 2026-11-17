@@ -1,4 +1,3 @@
-
 <?php
 /* ===========================================================
    NSBM 360 - Login Page
@@ -257,7 +256,7 @@ include __DIR__ . '/../includes/header.php';
             <!-- Forgot Password -->
             <div class="below-password">
 
-                <a href="passreset.php">
+                <a href="forgot.php">
                     Forgot password?
                 </a>
 
@@ -288,7 +287,7 @@ include __DIR__ . '/../includes/header.php';
         <div class="notice success info">
 
             <strong>
-                ◇ &nbsp;Just here to explore?
+                ◇  Just here to explore?
             </strong>
 
             <br>

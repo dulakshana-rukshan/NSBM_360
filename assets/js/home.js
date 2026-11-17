@@ -33,19 +33,31 @@ document.addEventListener("DOMContentLoaded", function () {
     let isLoading = false;
     let lastSignature = null;
 
-    function getSlides() { return [...newsSlider.querySelectorAll(".news-slide")]; }
-    function getDots() { return [...newsSlider.querySelectorAll(".news-dot")]; }
+    function getSlides() {
+      return [...newsSlider.querySelectorAll(".news-slide")];
+    }
+    function getDots() {
+      return [...newsSlider.querySelectorAll(".news-dot")];
+    }
     function showNews(index) {
       const slides = getSlides();
       if (!slides.length) return;
       current = (index + slides.length) % slides.length;
-      slides.forEach((slide, i) => slide.classList.toggle("active", i === current));
-      getDots().forEach((dot, i) => dot.classList.toggle("active", i === current));
+      slides.forEach((slide, i) =>
+        slide.classList.toggle("active", i === current),
+      );
+      getDots().forEach((dot, i) =>
+        dot.classList.toggle("active", i === current),
+      );
     }
-    function stopAutoSlide() { clearInterval(autoSlide); autoSlide = null; }
+    function stopAutoSlide() {
+      clearInterval(autoSlide);
+      autoSlide = null;
+    }
     function startAutoSlide() {
       stopAutoSlide();
-      if (getSlides().length > 1) autoSlide = setInterval(() => showNews(current + 1), 5000);
+      if (getSlides().length > 1)
+        autoSlide = setInterval(() => showNews(current + 1), 5000);
     }
     newsSlider.addEventListener("click", (event) => {
       if (event.target.closest(".news-prev")) showNews(current - 1);
@@ -61,7 +73,10 @@ document.addEventListener("DOMContentLoaded", function () {
     newsSlider.addEventListener("mouseleave", startAutoSlide);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stopAutoSlide();
-      else { startAutoSlide(); refreshNews(); }
+      else {
+        startAutoSlide();
+        refreshNews();
+      }
     });
 
     function makeElement(tag, className, text) {
@@ -74,32 +89,57 @@ document.addEventListener("DOMContentLoaded", function () {
       const selected = getSlides()[current]?.dataset.postId;
       const fragment = document.createDocumentFragment();
       if (!items.length) {
-        fragment.appendChild(makeElement("div", "home-empty-state", "No published news available yet."));
+        fragment.appendChild(
+          makeElement(
+            "div",
+            "home-empty-state",
+            "No published news available yet.",
+          ),
+        );
       } else {
         items.forEach((item, index) => {
-          const slide = makeElement("article", "news-slide" + (index === 0 ? " active" : ""));
+          const slide = makeElement(
+            "article",
+            "news-slide" + (index === 0 ? " active" : ""),
+          );
           slide.dataset.postId = String(item.post_id);
           const image = makeElement("div", "news-slide-image");
           image.style.backgroundImage = `url(${JSON.stringify(item.cover_image)})`;
           const overlay = makeElement("div", "news-slide-overlay");
-          overlay.appendChild(makeElement("span", "news-category", item.category_name));
+          overlay.appendChild(
+            makeElement("span", "news-category", item.category_name),
+          );
           overlay.appendChild(makeElement("h3", "", item.title));
-          overlay.appendChild(makeElement("p", "", item.summary || "Read the latest campus update."));
-          overlay.appendChild(makeElement("span", "news-date", item.date_label));
+          overlay.appendChild(
+            makeElement(
+              "p",
+              "",
+              item.summary || "Read the latest campus update.",
+            ),
+          );
+          overlay.appendChild(
+            makeElement("span", "news-date", item.date_label),
+          );
           slide.append(image, overlay);
           fragment.appendChild(slide);
         });
         if (items.length > 1) {
           const prev = makeElement("button", "news-arrow news-prev");
-          prev.type = "button"; prev.setAttribute("aria-label", "Previous news");
+          prev.type = "button";
+          prev.setAttribute("aria-label", "Previous news");
           prev.appendChild(makeElement("i", "bi bi-chevron-left"));
           const next = makeElement("button", "news-arrow news-next");
-          next.type = "button"; next.setAttribute("aria-label", "Next news");
+          next.type = "button";
+          next.setAttribute("aria-label", "Next news");
           next.appendChild(makeElement("i", "bi bi-chevron-right"));
           const dots = makeElement("div", "news-dots");
           items.forEach((_, index) => {
-            const dot = makeElement("button", "news-dot" + (index === 0 ? " active" : ""));
-            dot.type = "button"; dot.setAttribute("aria-label", `News slide ${index + 1}`);
+            const dot = makeElement(
+              "button",
+              "news-dot" + (index === 0 ? " active" : ""),
+            );
+            dot.type = "button";
+            dot.setAttribute("aria-label", `News slide ${index + 1}`);
             dots.appendChild(dot);
           });
           fragment.append(prev, next, dots);
@@ -107,7 +147,9 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       stopAutoSlide();
       newsSlider.replaceChildren(fragment);
-      const preservedIndex = items.findIndex(item => String(item.post_id) === selected);
+      const preservedIndex = items.findIndex(
+        (item) => String(item.post_id) === selected,
+      );
       current = preservedIndex >= 0 ? preservedIndex : 0;
       showNews(current);
       if (!newsSlider.matches(":hover") && !document.hidden) startAutoSlide();
@@ -117,7 +159,9 @@ document.addEventListener("DOMContentLoaded", function () {
       if (isLoading || document.hidden) return;
       isLoading = true;
       try {
-        const response = await fetch("/NSBM_360/api/latest_news.php", { cache: "no-store" });
+        const response = await fetch("/NSBM_360/api/latest_news.php", {
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error("Invalid news response");
@@ -127,8 +171,13 @@ document.addEventListener("DOMContentLoaded", function () {
           renderNews(data);
         }
       } catch (error) {
-        console.warn("Live news refresh failed; existing news remains visible.", error);
-      } finally { isLoading = false; }
+        console.warn(
+          "Live news refresh failed; existing news remains visible.",
+          error,
+        );
+      } finally {
+        isLoading = false;
+      }
     }
     showNews(0);
     startAutoSlide();
@@ -247,19 +296,36 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!upcomingEventsList) return;
     const fragment = document.createDocumentFragment();
     if (!items.length) {
-      fragment.appendChild(eventElement("p", "upcoming-empty-state", "No upcoming events available yet."));
+      fragment.appendChild(
+        eventElement(
+          "p",
+          "upcoming-empty-state",
+          "No upcoming events available yet.",
+        ),
+      );
     }
-    items.forEach(item => {
+    items.forEach((item) => {
       const card = eventElement("article", "upcoming-event-card");
       const badge = eventElement("div", "event-date-badge");
-      badge.append(eventElement("span", "event-date-day", item.date_day), eventElement("span", "event-date-month", item.date_month));
+      badge.append(
+        eventElement("span", "event-date-day", item.date_day),
+        eventElement("span", "event-date-month", item.date_month),
+      );
       const content = eventElement("div", "upcoming-event-content");
-      content.appendChild(eventElement("span", "upcoming-event-category", item.category_name));
+      content.appendChild(
+        eventElement("span", "upcoming-event-category", item.category_name),
+      );
       content.appendChild(eventElement("h3", "", item.title));
       const meta = eventElement("div", "upcoming-event-meta");
-      for (const [icon, value] of [["bi bi-clock", item.time_label], ["bi bi-geo-alt", item.venue]]) {
+      for (const [icon, value] of [
+        ["bi bi-clock", item.time_label],
+        ["bi bi-geo-alt", item.venue],
+      ]) {
         const span = eventElement("span");
-        span.append(eventElement("i", icon), document.createTextNode(" " + value));
+        span.append(
+          eventElement("i", icon),
+          document.createTextNode(" " + value),
+        );
         meta.appendChild(span);
       }
       content.appendChild(meta);
@@ -282,11 +348,30 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!featuredEventSlide) return;
     const fragment = document.createDocumentFragment();
     const item = items[0];
-    fragment.appendChild(eventElement("span", "activity-status", item ? "UPCOMING EVENT" : "CAMPUS UPDATES"));
-    fragment.appendChild(eventElement("h3", "", item ? item.title : "No Upcoming Events"));
-    fragment.appendChild(eventElement("p", "activity-description", item ? (item.summary || "Discover upcoming campus activities.") : "Check back soon for new campus activities."));
+    fragment.appendChild(
+      eventElement(
+        "span",
+        "activity-status",
+        item ? "UPCOMING EVENT" : "CAMPUS UPDATES",
+      ),
+    );
+    fragment.appendChild(
+      eventElement("h3", "", item ? item.title : "No Upcoming Events"),
+    );
+    fragment.appendChild(
+      eventElement(
+        "p",
+        "activity-description",
+        item
+          ? item.summary || "Discover upcoming campus activities."
+          : "Check back soon for new campus activities.",
+      ),
+    );
     if (item) {
-      for (const [icon, value] of [["bi bi-calendar-event", item.date_label + " · " + item.time_label], ["bi bi-geo-alt", item.venue]]) {
+      for (const [icon, value] of [
+        ["bi bi-calendar-event", item.date_label + " · " + item.time_label],
+        ["bi bi-geo-alt", item.venue],
+      ]) {
         const detail = eventElement("div", "activity-detail");
         detail.append(eventElement("i", icon), eventElement("span", "", value));
         fragment.appendChild(detail);
@@ -304,10 +389,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (document.hidden || eventsLoading) return;
     eventsLoading = true;
     try {
-      const response = await fetch("/NSBM_360/api/latest_events.php", { cache: "no-store" });
+      const response = await fetch("/NSBM_360/api/latest_events.php", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      if (!Array.isArray(data.upcoming) || !Array.isArray(data.calendar)) throw new Error("Invalid events response");
+      if (!Array.isArray(data.upcoming) || !Array.isArray(data.calendar))
+        throw new Error("Invalid events response");
       const signature = JSON.stringify(data);
       if (signature !== lastEventSignature) {
         lastEventSignature = signature;
@@ -317,10 +405,17 @@ document.addEventListener("DOMContentLoaded", function () {
         renderCalendar();
       }
     } catch (error) {
-      console.warn("Live events refresh failed; existing events remain visible.", error);
-    } finally { eventsLoading = false; }
+      console.warn(
+        "Live events refresh failed; existing events remain visible.",
+        error,
+      );
+    } finally {
+      eventsLoading = false;
+    }
   }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshEvents(); });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshEvents();
+  });
   setInterval(refreshEvents, 30000);
   refreshEvents();
 
@@ -409,4 +504,98 @@ document.addEventListener("DOMContentLoaded", function () {
   window.addEventListener("scroll", hideCalendarTooltip, true);
   window.addEventListener("resize", hideCalendarTooltip);
   renderCalendar();
+});
+
+// =========================
+// ANNOUNCEMENT SLIDER
+// =========================
+
+document.addEventListener("DOMContentLoaded", function () {
+  const slider = document.getElementById("announcementSlider");
+
+  if (!slider) return;
+
+  const slides = slider.querySelectorAll(".announcement-slide");
+  const dots = document.querySelectorAll(".announcement-dot");
+  const counter = document.getElementById("announcementCounter");
+  const prevBtn = document.getElementById("announcementPrev");
+  const nextBtn = document.getElementById("announcementNext");
+
+  if (slides.length === 0) return;
+
+  let currentIndex = 0;
+  let timer = null;
+
+  function showSlide(index) {
+    currentIndex = (index + slides.length) % slides.length;
+
+    slides.forEach((slide, i) => {
+      slide.classList.toggle("active", i === currentIndex);
+    });
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("active", i === currentIndex);
+    });
+
+    if (counter) {
+      counter.textContent =
+        String(currentIndex + 1).padStart(2, "0") +
+        " / " +
+        String(slides.length).padStart(2, "0");
+    }
+  }
+
+  function stopTimer() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+
+    if (slides.length > 1 && !document.hidden) {
+      timer = setInterval(() => {
+        showSlide(currentIndex + 1);
+      }, 5000);
+    }
+  }
+
+  prevBtn?.addEventListener("click", () => {
+    showSlide(currentIndex - 1);
+    startTimer();
+  });
+
+  nextBtn?.addEventListener("click", () => {
+    showSlide(currentIndex + 1);
+    startTimer();
+  });
+
+  dots.forEach((dot, index) => {
+    dot.addEventListener("click", () => {
+      showSlide(index);
+      startTimer();
+    });
+  });
+
+  slider.addEventListener("mouseenter", stopTimer);
+  slider.addEventListener("mouseleave", startTimer);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
+  });
+
+  // Hide navigation buttons when only one announcement exists
+  if (slides.length === 1) {
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+  }
+
+  showSlide(0);
+  startTimer();
 });

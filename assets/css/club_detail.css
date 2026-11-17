@@ -1,0 +1,318 @@
+
+.club-detail-main,
+.club-detail-main * { box-sizing: border-box; }
+.club-detail-main {
+    width: min(1180px, calc(100% - 44px));
+    margin: 0 auto;
+    padding: 31px 0 68px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #112c45;
+}
+.club-detail-main a { color: #0b8152; }
+.club-detail-main a:hover { color: #06613d; }
+.club-detail-main button,
+.club-detail-main input,
+.club-detail-main select,
+.club-detail-main textarea { font: inherit; }
+.club-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #8a939c;
+    margin-bottom: 23px;
+}
+.club-breadcrumb a { text-decoration: none; color: #657582; }
+
+.club-detail-main .nsbmclub-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    position: relative;
+    width: 100%;
+    overflow: visible;
+    isolation: isolate;
+}
+.club-detail-main .nsbmclub-cover {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 280px;
+    border-radius: 13px;
+    overflow: hidden;
+    background: linear-gradient(120deg,#04315a,#097b60 55%,#a8e5c1);
+}
+.club-detail-main .nsbmclub-cover-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+.club-detail-main .nsbmclub-logo {
+    grid-area: 1 / 1;
+    position: relative; /* keep in hero grid; never fixed to page */
+    justify-self: start;
+    align-self: end;
+    margin-left: 30px;
+    transform: translateY(44%);
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 190px;
+    height: 190px;
+    border: 5px solid #fff;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #052a50;
+    color: #34d345;
+    font-size: 30px;
+    font-weight: 800;
+    box-shadow: 0 0 0 2px #33cc33,0 6px 18px rgba(0,0,0,.15);
+    transition: box-shadow .22s ease;
+}
+.club-detail-main .nsbmclub-logo:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,.15);
+}
+.club-detail-main .nsbmclub-logo img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.club-detail-main .nsbmclub-logo-initials { line-height: 1; }
+.club-identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 125px;
+    padding: 22px 0 25px 245px;
+}
+.club-identity-left { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.club-identity h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(27px, 3vw, 40px);
+    line-height: 1.12;
+    margin: 0 0 8px;
+    color: #082b50;
+    overflow-wrap: anywhere;
+}
+.club-identity p { color: #74808a; margin: 0; font-size: 13px; }
+.club-identity-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.club-identity-actions form { margin: 0; }
+.club-detail-main .club-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 39px;
+    padding: 10px 17px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.club-detail-main .club-btn-green { background: #2dcc32; color: #062d1b; border-color: #2dcc32; }
+.club-detail-main .club-btn-green:hover { background: #1bb825; color: #062d1b; }
+.club-detail-main .club-btn-soft { background: #e6f7e9; color: #137243; border-color: #b9e7c6; }
+.club-detail-main .club-btn-soft:hover { background: #d4f0de; }
+.club-detail-main .club-btn-outline { background: white; color: #173c54; border-color: #d9e1e7; }
+.club-detail-main .club-btn-outline:hover { border-color: #83cda0; color: #087d4e; }
+.club-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    border-bottom: 1px solid #dfe5eb;
+    margin: 1px 0 27px;
+}
+.club-tabs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 2px solid transparent;
+    text-decoration: none;
+    color: #65737f;
+    font-size: 12px;
+    font-weight: 600;
+}
+.club-tabs a:hover { color: #078052; }
+.club-tabs a.active { color: #078052; border-color: #17a668; }
+.club-layout { display: grid; grid-template-columns: minmax(0, 2.05fr) minmax(250px, 1fr); gap: 24px; align-items: start; }
+.club-primary-column,.club-side-column { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.club-panel {
+    padding: 23px 25px;
+    border-radius: 12px;
+    border: 1px solid #e1e5ea;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(17, 44, 69, .02);
+    min-width: 0;
+}
+.club-panel h2, .club-community-section h2 {
+    color: #122e47;
+    font-size: 19px;
+    font-weight: 650;
+    line-height: 1.35;
+    margin: 0 0 16px;
+}
+.club-panel h3 { font-size: 16px; color: #15334d; margin: 16px 0 9px; }
+.club-panel p { color: #52616d; margin: 0 0 14px; }
+.club-panel p:last-child { margin-bottom: 0; }
+.club-description { white-space: normal; line-height: 1.95; overflow-wrap: anywhere; }
+.club-panel-head, .club-section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.club-panel-head a, .club-section-head > a, .club-text-link { color: #0a8554; font-size: 12px; font-weight: bold; text-decoration: none; }
+.club-panel-head a:hover, .club-section-head > a:hover, .club-text-link:hover { text-decoration: underline; }
+.club-leader-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.club-leader-item { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.club-leader-initials {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 100%;
+    background: #e6f5e9;
+    color: #113e51;
+    font-weight: 800;
+    font-size: 13px;
+}
+.club-leader-item div, .club-leader-detail > div { min-width: 0; }
+.club-leader-item small, .club-leader-detail small { display: block; color: #188253; font-size: 10px; font-weight: 700; }
+.club-leader-item strong, .club-leader-detail strong { color: #102a45; display: block; font-size: 13px; overflow-wrap: anywhere; }
+.club-follow-panel .club-soft-pill { display: inline-block; padding: 4px 7px; color: #147447; background: #e9f8ed; border-radius: 4px; font-size: 10px; font-weight: bold; }
+.club-big-number { margin: 14px 0 10px; font-size: 32px; font-weight: 800; line-height: 1.3; color: #08294c; }
+.club-big-number span { font-size: 16px; font-weight: 600; }
+.club-follow-panel p { font-size: 12px; line-height: 1.8; }
+.club-tip { background: #e5f7e9; border-radius: 9px; color: #16804e; padding: 19px 21px; }
+.club-tip strong { font-size: 13px; color: #173c47; }
+.club-tip p { font-size: 12px; line-height: 1.7; margin: 8px 0 0; color: #27825b; }
+.club-community-section { margin-top: 30px; }
+.club-section-head { margin-bottom: 19px; }
+.club-section-head h2 { font-size: 23px; margin: 0; }
+.club-section-head p { margin: 6px 0 0; color: #72818c; font-size: 13px; }
+.club-story-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 21px; }
+.club-detail-main .club-story-card {
+    background: white;
+    border: 1px solid #e3e7ec;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.club-detail-main .club-story-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(20,38,62,.10); color: inherit; }
+.club-story-image { height: 166px; background: linear-gradient(130deg,#047455,#052953); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.club-story-image img { height: 100%; width: 100%; object-fit: cover; display: block; }
+.club-story-content { padding: 17px 19px 20px; }
+.club-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.club-tags span { border-radius: 3px; background: #e6f6eb; color: #128150; padding: 3px 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+.club-tags .club-tag-blue { background: #edf3ff; color: #17508a; }
+.club-story-card h3 { font-weight: 650; color: #0d2947; font-size: 17px; line-height: 1.4; margin: 0 0 10px; }
+.club-story-card p { color: #75808a; font-size: 12px; line-height: 1.7; margin: 0 0 11px; overflow-wrap: anywhere; }
+.club-story-meta { color: #687883; font-size: 11px; line-height: 1.7; margin-bottom: 11px; }
+.club-story-action { color: #148554; font-size: 12px; font-weight: bold; }
+.club-empty { background: white; border: 1px dashed #becdc5; padding: 32px; border-radius: 10px; grid-column: 1 / -1; color: #688073; }
+.club-filter-pills { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.club-filter-pills a { background: white; border: 1px solid #dde5e9; padding: 7px 13px; border-radius: 7px; text-decoration: none; font-size: 12px; color: #596974; }
+.club-filter-pills a.chosen { background: #e2f6e8; border-color: #bbebce; color: #117a49; font-weight: bold; }
+.club-expanded-story { max-width: 880px; }
+.club-expanded-story h2 { font-size: 27px; margin-top: 17px; }
+.club-expanded-story .club-muted, .club-muted { color: #74818b; font-size: 13px; }
+.club-back-link { font-size: 12px; text-decoration: none; font-weight: 700; }
+.club-expanded-image { display: block; width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px; margin: 20px 0; }
+.club-expanded-text { white-space: normal; line-height: 1.9; overflow-wrap: anywhere; }
+.club-event-details { border-top: 1px solid #e5e9ed; padding-top: 15px; margin-top: 22px; }
+.club-event-details p { margin: 6px 0; }
+.club-narrow { max-width: 850px; }
+.club-leader-list { display: grid; gap: 5px; margin: 15px 0 19px; }
+.club-leader-detail { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid #e9eef0; padding: 18px 0; }
+.club-leader-detail > div { flex: 1; }
+.club-leader-detail strong { font-size: 15px; }
+.club-leader-detail p { font-size: 12px; margin-top: 4px; }
+.club-leader-detail .club-btn { margin-left: auto; }
+.club-stack-form { display: flex; flex-direction: column; gap: 11px; max-width: 580px; margin-top: 14px; }
+.club-stack-form label { color: #203544; font-size: 13px; font-weight: bold; }
+.club-stack-form input, .club-stack-form select, .club-stack-form textarea {
+    background: #fff;
+    padding: 12px 14px;
+    border: 1px solid #d7e0e4;
+    border-radius: 7px;
+    width: 100%;
+    color: #18354a;
+    outline-color: #129b64;
+}
+.club-stack-form .club-btn { align-self: flex-start; margin-top: 6px; }
+.club-separator { border: 0; border-top: 1px solid #e6ebed; margin: 24px 0; }
+.club-request-status { padding: 11px 12px; background: #eff6fb; border-radius: 6px; }
+.club-alert { padding: 12px 17px; margin: 0 0 17px; font-size: 13px; border-radius: 8px; }
+.club-alert-success { background: #e2f8e8; border: 1px solid #bbebc7; color: #14663c; }
+.club-alert-error { background: #fff2ee; border: 1px solid #f6cbc0; color: #994c32; }
+.club-inbox { max-width: 900px; margin-top: 24px; }
+.club-inbox-item { padding: 17px 0; border-top: 1px solid #e3e9ea; }
+.club-inbox-item > div { display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+.club-inbox-item span { color: #829099; font-size: 12px; }
+.club-inbox-item p { line-height: 1.8; margin: 11px 0; }
+/* Club-specific WhatsApp and Instagram links. */
+.club-social-list { display: grid; gap: 14px; margin-top: 18px; }
+.club-social-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid #e2e9e6;
+    border-radius: 10px;
+    background: #f9fcfa;
+}
+.club-social-item > div { min-width: 0; flex: 1 1 190px; }
+.club-social-item strong { color: #123650; font-size: 14px; }
+.club-social-item p { font-size: 12px; margin: 4px 0 0; }
+.club-detail-main .club-btn-social-whatsapp { background: #e1f7e9; color: #106b37; border-color: #a4dfba; }
+.club-detail-main .club-btn-social-whatsapp:hover { background: #c9efd8; color: #0b562d; }
+.club-detail-main .club-btn-social-instagram { background: #fff0f7; color: #983c6c; border-color: #e9bfd5; }
+.club-detail-main .club-btn-social-instagram:hover { background: #ffe4f0; color: #812955; }
+.club-social-unavailable { color: #788790; font-size: 12px; font-style: italic; }
+.club-side-social { display: grid; gap: 10px; }
+.club-side-social .club-btn { justify-content: center; white-space: normal; }
+@media (max-width: 980px) {
+    .club-story-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .club-detail-main .nsbmclub-cover { height: 235px; }
+    .club-identity { padding-left: 210px; }
+    .club-detail-main .nsbmclub-logo { width: 160px; height: 160px; transform: translateY(44%); }
+}
+@media (max-width: 700px) {
+    .club-detail-main { width: calc(100% - 26px); padding: 21px 0 46px; }
+    .club-detail-main .nsbmclub-cover { height: 170px; }
+    .club-detail-main .nsbmclub-logo { width: 125px; height: 125px; margin-left: 16px; transform: translateY(44%); border-width: 4px; }
+    .club-identity {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+        padding: 58px 0 18px;
+        min-height: 0;
+    }
+    .club-identity h1 { font-size: 28px; }
+    .club-identity-actions { justify-content: flex-start; }
+    .club-social-item .club-btn { white-space: normal; }
+    .club-tabs { gap: 18px; }
+    .club-tabs a { font-size: 12px; }
+    .club-layout { grid-template-columns: 1fr; }
+    .club-story-grid { grid-template-columns: 1fr; }
+    .club-leader-row { grid-template-columns: 1fr; }
+    .club-panel { padding: 19px 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .club-story-card, .nsbmclub-logo { transition: none !important; }
+}

@@ -98,53 +98,66 @@ function renderClubsContent(array $clubs, int $totalClubs, int $clubsPerPage, in
                 $banner = clubsImagePath($club['banner_image'] ?? '');
                 $name = (string)($club['club_name'] ?? 'Club');
                 $initials = strtoupper(substr($name, 0, 2));
+                $detailUrl = "club_detail.php?id=" . (int)$club['club_id'];
                 ?>
                 <article class="club-card">
-                    <!-- Large banner: independent from the profile logo -->
-                    <div class="card-image-wrapper">
-                        <div class="club-banner-fallback" aria-hidden="true"></div>
-                        <?php if ($banner !== ''): ?>
-                            <img src="<?= clubsEscape($banner) ?>"
-                                 alt="<?= clubsEscape($name) ?> banner"
-                                 class="club-banner" loading="lazy"
-                                 onerror="this.remove()">
-                        <?php endif; ?>
-                    </div>
+    <!-- Large banner: Clickable wrapper for banner photo -->
+    <div class="card-image-wrapper">
+        <a href="<?= $detailUrl ?>" 
+           onclick="checkLoginAndExplore(event, '<?= $detailUrl ?>')"
+           style="display: block; width: 100%; height: 100%;">
+            <div class="club-banner-fallback" aria-hidden="true"></div>
+            <?php if ($banner !== ''): ?>
+                <img src="../uploads/clubs/<?= clubsEscape($banner) ?>"
+                     alt="<?= clubsEscape($name) ?> banner"
+                     class="club-banner" loading="lazy"
+                     onerror="this.remove()">
+            <?php endif; ?>
+        </a>
+    </div>
 
-                    <div class="card-body">
-                        <div class="card-top-row">
-                            <!-- Club logo: green ring disappears when the mouse hovers over it -->
-                            <div class="club-avatar club-avatar--green-ring">
-                                <span class="club-default-icon"><?= clubsEscape($initials) ?></span>
-                                <?php if ($logo !== ''): ?>
-                                    <img src="<?= clubsEscape($logo) ?>"
-                                         alt="<?= clubsEscape($name) ?> logo"
-                                         class="club-profile-img" loading="lazy"
-                                         onerror="this.remove()">
-                                <?php endif; ?>
-                            </div>
-                            <div class="club-titles">
-                                <h3 class="club-name"><?= clubsEscape($name) ?></h3>
-                                <span class="club-category">Student Community</span>
-                            </div>
-                        </div>
+    <div class="card-body">
+        <div class="card-top-row">
+            <!-- Club logo -->
+            <div class="club-avatar club-avatar--green-ring">
+                <span class="club-default-icon"><?= clubsEscape($initials) ?></span>
+                <?php if ($logo !== ''): ?>
+                    <img src="../uploads/clubs/<?= clubsEscape($logo) ?>"
+                         alt="<?= clubsEscape($name) ?> logo"
+                         class="club-profile-img" loading="lazy"
+                         onerror="this.style.display='none'">
+                <?php endif; ?>
+            </div>
+            <div class="club-titles">
+                <!-- Club Name: Clickable -->
+                <h3 class="club-name">
+                    <a href="<?= $detailUrl ?>" 
+                       onclick="checkLoginAndExplore(event, '<?= $detailUrl ?>')"
+                       style="color: inherit; text-decoration: none;">
+                        <?= clubsEscape($name) ?>
+                    </a>
+                </h3>
+                <span class="club-category">Student Community</span>
+            </div>
+        </div>
 
-                        <p class="club-desc"><?= clubsEscape($club['description'] ?? '') ?></p>
+        <p class="club-desc"><?= clubsEscape($club['description'] ?? '') ?></p>
 
-                        <div class="club-footer-row">
-                            <span class="clubs-members">Active Community</span>
-                            <?php if (($club['status'] ?? 'active') === 'active'): ?>
-                                <span class="badge-open">OPEN TO JOIN</span>
-                            <?php else: ?>
-                                <span class="badge-inactive">INACTIVE</span>
-                            <?php endif; ?>
-                        </div>
+        <div class="club-footer-row">
+            <span class="clubs-members">Active Community</span>
+            <?php if (($club['status'] ?? 'active') === 'active'): ?>
+                <span class="badge-open">OPEN TO JOIN</span>
+            <?php else: ?>
+                <span class="badge-inactive">INACTIVE</span>
+            <?php endif; ?>
+        </div>
 
-                        <a class="explore-link" href="club_detail.php?id=<?= (int)$club['club_id'] ?>">
-                            Explore club <span aria-hidden="true">&rarr;</span>
-                        </a>
-                    </div>
-                </article>
+        <a class="explore-link" href="<?= $detailUrl ?>"
+           onclick="checkLoginAndExplore(event, '<?= $detailUrl ?>')">
+            Explore club <span aria-hidden="true">&rarr;</span>
+        </a>
+    </div>
+</article>
             <?php endforeach; ?>
         <?php else: ?>
             <div class="clubs-empty-state">No clubs found matching your search.</div>

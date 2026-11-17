@@ -3,7 +3,7 @@
 
 require_once __DIR__ . '/config/database.php';
 
-// 2. Read and validate search filters from the URL.
+//Read and validate search filters from the URL
 $search = trim((string)($_GET['q'] ?? ''));
 $search = substr($search, 0, 100);
 $type = (string)($_GET['type'] ?? 'all');
@@ -12,14 +12,14 @@ $sort = (string)($_GET['sort'] ?? 'relevant');
 $page = max(1, (int)($_GET['page'] ?? 1));
 
 $types = ['all', 'news', 'events', 'clubs', 'academic', 'announcements'];
-$times = ['any', 'week', 'month', 'year'];
+$times = ['upcoming', 'any', 'week', 'month'];
 $sorts = ['relevant', 'newest', 'oldest'];
 
 if (!in_array($type, $types, true)) $type = 'all';
 if (!in_array($time, $times, true)) $time = 'any';
 if (!in_array($sort, $sorts, true)) $sort = 'relevant';
 
-// 3. Reusable helper functions.
+//Reusable helper functions
 function e($value): string {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
@@ -34,7 +34,7 @@ function formattedDate($date): string {
     return $stamp ? date('d M Y', $stamp) : '';
 }
 
-// Only allow normal image paths or HTTPS/HTTP links stored in the database.
+//Only allow normal image paths or HTTPS/HTTP links stored in the database
 function photoPath($value): string {
     $path = trim((string)$value);
 
@@ -49,7 +49,7 @@ function photoPath($value): string {
     return $path;
 }
 
-// Build safe GET links while keeping the search term and selected filters.
+//Build safe get links while keeping the search term and selected filters
 function linkTo(array $changes = []): string {
     global $search, $type, $time, $sort;
 
@@ -61,7 +61,7 @@ function linkTo(array $changes = []): string {
     ], $changes));
 }
 
-// Fetch records using the team's PDO database connection.
+//Fetch records using the teams PDO database connection
 function getRows(PDO $pdo, string $sql, array $params = []): array {
     $statement = $pdo->prepare($sql);
     $statement->execute($params);
@@ -71,12 +71,12 @@ function getRows(PDO $pdo, string $sql, array $params = []): array {
 $results = [];
 $error = '';
 
-// 4. Get published posts, events, active clubs, and published announcements.
+//Get published posts, events, active clubs, and published announcements
 try {
-    // $pdo comes from config/database.php.
+    //$pdo comes from config/database.php.
     $keyword = '%' . $search . '%';
 
-    // POSTS: event details come from events, names from categories/users.
+    //POSTS - event details come from events, names from categories/users
     $sql = "SELECT p.post_id, p.title, p.summary, p.content, p.cover_image,
                    p.created_at, p.published_at, c.category_name,
                    u.first_name, u.last_name, e.event_id, e.event_date,
@@ -126,7 +126,7 @@ try {
         ];
     }
 
-    // CLUBS: there is no member-count field in the clubs table.
+    //CLUBS - there is no member count field in the clubs table
     $sql = "SELECT club_id, club_name, description, logo, status, created_at
             FROM clubs WHERE status = 'active'";
 
@@ -151,7 +151,7 @@ try {
         ];
     }
 
-    // ANNOUNCEMENTS: only show published and non-expired items.
+    //Announcement - only show published and non expired items
     $sql = "SELECT a.announcement_id, a.title, a.content, a.image,
                    a.created_at, u.first_name, u.last_name
             FROM announcements a
@@ -182,35 +182,38 @@ try {
     }
 
 } catch (Throwable $exception) {
-    // Keep raw database errors out of the public web page.
+    //Keep raw database errors out of the public web page
     $error = 'Database connection or query failed. Check MySQL and your nsbm_360 database.';
     error_log($exception->getMessage());
 }
 
-// 5. Apply content-type and time filters.
+//Apply content type and time filters
 $cutoff = 0;
 
 if ($time === 'week') $cutoff = strtotime('-7 days');
 if ($time === 'month') $cutoff = strtotime('-30 days');
-if ($time === 'year') $cutoff = strtotime('-1 year');
+//Upcoming shows only events scheduled for today or later
+$today = date('Y-m-d');
 
-// Count matching records for each filter.
+//Count matching records for each filter
 $filterCounts = array_fill_keys($types, 0);
 
 foreach ($results as $item) {
+    if ($time === 'upcoming' && ($item['kind'] !== 'events' || empty($item['event_date']) || $item['event_date'] < $today)) continue;
     if ($cutoff && strtotime((string)$item['date']) < $cutoff) continue;
 
     $filterCounts['all']++;
     $filterCounts[$item['kind']]++;
 }
 
-$results = array_values(array_filter($results, function ($item) use ($type, $cutoff) {
+$results = array_values(array_filter($results, function ($item) use ($type, $cutoff, $time, $today) {
     if ($type !== 'all' && $item['kind'] !== $type) return false;
+    if ($time === 'upcoming' && ($item['kind'] !== 'events' || empty($item['event_date']) || $item['event_date'] < $today)) return false;
     if ($cutoff && strtotime((string)$item['date']) < $cutoff) return false;
     return true;
 }));
 
-// 6. Sort results; title matches rank first for "Most Relevant" searches.
+//Sort results title matches rank first for Most Relevant searches
 usort($results, function ($a, $b) use ($sort, $search) {
     $aDate = strtotime((string)$a['date']) ?: 0;
     $bDate = strtotime((string)$b['date']) ?: 0;
@@ -227,7 +230,7 @@ usort($results, function ($a, $b) use ($sort, $search) {
     return ($bScore <=> $aScore) ?: ($bDate <=> $aDate);
 });
 
-// 7. Show 6 search results per page.
+//Show 6 search results per page
 $perPage = 6;
 $total = count($results);
 $totalPages = max(1, (int)ceil($total / $perPage));
@@ -242,7 +245,7 @@ $visibleResults = array_slice(
 $first = $total ? (($page - 1) * $perPage + 1) : 0;
 $last = min($page * $perPage, $total);
 
-// View Details works on this same page.
+//View Details works on this same page
 $detailKey = (string)($_GET['detail'] ?? '');
 $detail = null;
 
@@ -311,10 +314,10 @@ foreach ($results as $item) {
         </select>
 
         <select class="toolbar-select time-select" name="time" aria-label="Time range">
+            <option value="upcoming" <?= $time === 'upcoming' ? 'selected' : '' ?>>Upcoming</option>
             <option value="any" <?= $time === 'any' ? 'selected' : '' ?>>Any time</option>
             <option value="week" <?= $time === 'week' ? 'selected' : '' ?>>Past 7 days</option>
             <option value="month" <?= $time === 'month' ? 'selected' : '' ?>>Past 30 days</option>
-            <option value="year" <?= $time === 'year' ? 'selected' : '' ?>>Past year</option>
         </select>
 
         <input type="hidden" name="sort" value="<?= e($sort) ?>">

@@ -198,7 +198,7 @@ if ($isLoggedIn) {
                     <?php if ($isAdmin): ?>
 
                         <a
-                            href="/NSBM_360/admin/dashboard.php"
+                            href="/NSBM_360/admin/admin_overview.php"
                             class="header-admin-btn"
                         >
                             <i class="bi bi-speedometer2"></i>

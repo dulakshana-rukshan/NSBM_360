@@ -2257,3 +2257,223 @@ body {
   background: #fff;
   text-align: center;
 }
+
+/* =========================
+   CAMPUS ANNOUNCEMENTS
+========================= */
+
+/* =========================
+   ANNOUNCEMENT SECTION WIDTH
+========================= */
+
+.home-announcements {
+  width: 100%;
+  padding: 24px 20px;
+  background: #f5f7fa;
+  box-sizing: border-box;
+}
+
+.announcement-bar {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile Responsive */
+
+@media (max-width: 768px) {
+  .home-announcements {
+    padding: 16px;
+  }
+}
+
+.announcement-bar {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d9e0e8;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 5px 22px rgba(0, 33, 71, 0.4);
+}
+
+/* HEADER */
+
+.announcement-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #d9e0e8;
+}
+
+.announcement-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.announcement-label > i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: #eaf8ea;
+  color: #198754;
+  border-radius: 9px;
+  font-size: 20px;
+}
+
+.announcement-heading h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #002147;
+}
+
+.announcement-heading span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  letter-spacing: 1px;
+}
+
+.announcement-view-all {
+  color: #198754;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* SLIDES */
+
+.announcement-slider {
+  min-height: 110px;
+}
+
+.announcement-slide {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.announcement-slide.active {
+  display: flex;
+}
+
+.announcement-important {
+  display: inline-block;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.announcement-slide h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.announcement-slide p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* BOTTOM */
+
+.announcement-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-top: 16px;
+  margin-top: 18px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.announcement-dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.announcement-dot {
+  width: 8px;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.announcement-dot.active {
+  width: 26px;
+  background: #33cc33;
+}
+
+.announcement-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.announcement-counter {
+  margin-right: 10px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.announcement-actions button {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #002147;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.announcement-actions button:hover {
+  background: #eaf8ea;
+  border-color: #33cc33;
+  color: #198754;
+}
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+  .home-announcements {
+    padding: 16px;
+  }
+
+  .announcement-bar {
+    padding: 18px;
+  }
+
+  .announcement-heading h2 {
+    font-size: 14px;
+  }
+
+  .announcement-slide h3 {
+    font-size: 16px;
+  }
+
+  .announcement-slide p {
+    font-size: 13px;
+  }
+}
