@@ -1,39 +1,33 @@
 
 <?php
 
-// ------------------------------------
+// --------------------------------------------------
 // 1. START SESSION
-// ------------------------------------
+// --------------------------------------------------
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 
-// ------------------------------------
+// --------------------------------------------------
 // 2. IDENTIFY CURRENT PAGE
-// ------------------------------------
+// --------------------------------------------------
 
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 
-// ------------------------------------
-// 3. CONNECT DATABASE
-// ------------------------------------
+// --------------------------------------------------
+// 3. LOAD DATABASE AND HELPER FUNCTIONS
+// --------------------------------------------------
 
 require_once __DIR__ . '/../config/database.php';
-
-
-// ------------------------------------
-// 4. LOAD PRESIDENT HELPER FUNCTIONS
-// ------------------------------------
-
 require_once __DIR__ . '/president_functions.php';
 
 
-// ------------------------------------
-// 5. CHECK LOGIN SESSION
-// ------------------------------------
+// --------------------------------------------------
+// 4. CHECK LOGIN
+// --------------------------------------------------
 
 if (
     !isset($_SESSION['user_id']) ||
@@ -51,9 +45,9 @@ if (
 $userId = (int) $_SESSION['user_id'];
 
 
-// ------------------------------------
-// 6. GET PRESIDENT AND CLUB DETAILS
-// ------------------------------------
+// --------------------------------------------------
+// 5. CHECK PRESIDENT / VICE PRESIDENT MEMBERSHIP
+// --------------------------------------------------
 
 $sql = "SELECT
             u.user_id,
@@ -71,6 +65,9 @@ $sql = "SELECT
 
             c.club_name,
             c.logo,
+            c.banner,
+            c.description AS club_description,
+            c.club_type,
             c.status AS club_status
 
         FROM users AS u
@@ -82,8 +79,14 @@ $sql = "SELECT
             ON cm.club_id = c.club_id
 
         WHERE u.user_id = :user_id
-          AND cm.club_role = 'president'
+
+          AND cm.club_role IN (
+              'president',
+              'vice_president'
+          )
+
           AND cm.membership_status = 'active'
+
           AND c.status = 'active'
 
         LIMIT 2";
@@ -94,42 +97,51 @@ $stmt->execute([
     'user_id' => $userId
 ]);
 
-$presidentRecords = $stmt->fetchAll();
+$presidentRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// ------------------------------------
-// 7. CHECK PRESIDENT ACCESS
-// ------------------------------------
+// --------------------------------------------------
+// 6. ENSURE THE USER HAS ONLY ONE ACTIVE CLUB
+// --------------------------------------------------
 
 if (count($presidentRecords) !== 1) {
 
     show_access_message(
         403,
         'Access Denied',
-        'You do not have an active President membership for one club.'
+        'You do not have an active President or Vice President membership for one club.'
     );
+
 }
 
 
-// ------------------------------------
-// 8. STORE PRESIDENT DETAILS
-// ------------------------------------
+// --------------------------------------------------
+// 7. STORE USER AND CLUB DETAILS
+// --------------------------------------------------
 
 $president = $presidentRecords[0];
-
-
-// ------------------------------------
-// 9. CREATE VARIABLES FOR ALL PAGES
-// ------------------------------------
 
 $userId = (int) $president['user_id'];
 
 $clubId = (int) $president['club_id'];
 
 $userName = trim(
-    $president['first_name'] . ' ' . $president['last_name']
+    $president['first_name'] . ' ' .
+    $president['last_name']
 );
 
+$profileImage = $president['profile_image'];
+
 $clubName = $president['club_name'];
+
+$clubRole = $president['club_role'];
+
+$clubType = $president['club_type'];
+
+$clubLogo = $president['logo'];
+
+$clubBanner = $president['banner'];
+
+$clubDescription = $president['club_description'];
 
 ?>
