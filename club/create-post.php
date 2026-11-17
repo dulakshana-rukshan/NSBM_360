@@ -3,32 +3,153 @@
 
 require_once __DIR__ . '/president_auth.php';
 
-
 // ------------------------------------
 // 1. PAGE SETTINGS
 // ------------------------------------
 
 $pageTitle = 'Create New Post | NEWS 360';
-$pageCSS = '/NSBM-360/NSBM_360/club/president.css';
+$pageCSS = '/NSBM_360/assets/css/president.css';
 $isPresidentPage = true;
 
 
 // ------------------------------------
-// 2. GET CATEGORIES
+// 2. VERIFY CLUB MEMBERSHIP
 // ------------------------------------
 
-$categoriesSql = "
+$membershipStmt = $pdo->prepare("
+    SELECT
+        cm.club_id,
+        cm.club_role,
+        c.club_name,
+        c.club_type
+    FROM club_memberships cm
+    INNER JOIN clubs c ON cm.club_id = c.club_id
+    WHERE cm.user_id = :user_id
+      AND cm.club_id = :club_id
+      AND cm.membership_status = 'active'
+      AND c.status = 'active'
+      AND cm.club_role IN ('president', 'vice_president')
+    LIMIT 1
+");
+
+$membershipStmt->execute([
+    'user_id' => $userId,
+    'club_id' => $clubId
+]);
+
+$membership = $membershipStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$membership) {
+    http_response_code(403);
+    exit('You do not have permission to create posts for this club.');
+}
+
+$clubType = $membership['club_type'];
+$clubName = $membership['club_name'];
+
+
+// ------------------------------------
+// 3. DEFINE ALLOWED MAIN CATEGORIES
+// ------------------------------------
+
+if (strtolower($clubType) === 'sports') {
+    $allowedMainCategoryNames = ['sports', 'events'];
+} else {
+    $allowedMainCategoryNames = ['academics', 'events', 'news'];
+}
+
+$categoryPlaceholders = implode(
+    ',',
+    array_fill(0, count($allowedMainCategoryNames), '?')
+);
+
+
+// ------------------------------------
+// 4. LOAD ALLOWED MAIN CATEGORIES
+// ------------------------------------
+
+$mainCategoriesStmt = $pdo->prepare("
     SELECT category_id, category_name
     FROM categories
+    WHERE parent_category_id IS NULL
+      AND LOWER(TRIM(category_name)) IN ($categoryPlaceholders)
     ORDER BY category_name
-";
+");
 
-$categoriesStmt = $pdo->query($categoriesSql);
-$categories = $categoriesStmt->fetchAll();
+$mainCategoriesStmt->execute($allowedMainCategoryNames);
+
+$mainCategories = $mainCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // ------------------------------------
-// 3. FORM VARIABLES
+// 5. LOAD SUBCATEGORIES
+// Exclude Clubs subcategory
+// ------------------------------------
+
+$subCategoriesStmt = $pdo->query("
+    SELECT
+        subcategory_id,
+        category_id,
+        subcategory_name
+    FROM subcategories
+    WHERE LOWER(TRIM(subcategory_name)) <> 'clubs'
+    ORDER BY subcategory_name
+");
+
+$subCategories = $subCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// ------------------------------------
+// 6. LOAD FACULTIES
+// ------------------------------------
+
+$facultiesStmt = $pdo->query("
+    SELECT faculty_id, faculty_name
+    FROM faculties
+    ORDER BY faculty_name
+");
+
+$faculties = $facultiesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// ------------------------------------
+// 7. LOAD SPORTS ASSIGNED TO THIS CLUB
+// ------------------------------------
+
+$sportsStmt = $pdo->prepare("
+    SELECT s.sport_id, s.sport_name
+    FROM club_sports cs
+    INNER JOIN sports s ON cs.sport_id = s.sport_id
+    WHERE cs.club_id = :club_id
+      AND s.is_active = 1
+    ORDER BY s.sport_name
+");
+
+$sportsStmt->execute([
+    'club_id' => $clubId
+]);
+
+$sports = $sportsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+// ------------------------------------
+// 8. FIND MAIN CATEGORY IDs
+// ------------------------------------
+
+$categoryIds = [];
+
+foreach ($mainCategories as $category) {
+    $categoryIds[strtolower(trim($category['category_name']))] =
+        (int) $category['category_id'];
+}
+
+$newsCategoryId = $categoryIds['news'] ?? null;
+$eventsCategoryId = $categoryIds['events'] ?? null;
+$sportsCategoryId = $categoryIds['sports'] ?? null;
+
+
+// ------------------------------------
+// 9. FORM VARIABLES
 // ------------------------------------
 
 $errors = [];
@@ -36,12 +157,24 @@ $errors = [];
 $title = '';
 $summary = '';
 $content = '';
-$categoryId = '';
+
+$mainCategoryId = '';
+$subcategoryId = '';
+
+$selectedFacultyIds = [];
+$selectedSportId = '';
+
 $status = 'draft';
+
+$eventStartAt = '';
+$eventEndAt = '';
+$eventVenue = '';
+$registrationDeadline = '';
+$registrationLink = '';
 
 
 // ------------------------------------
-// 4. PROCESS FORM
+// 10. PROCESS FORM
 // ------------------------------------
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,92 +183,399 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $summary = trim($_POST['summary'] ?? '');
     $content = trim($_POST['content'] ?? '');
 
-    $categoryId = filter_var(
-        $_POST['category_id'] ?? '',
+    $mainCategoryId = filter_var(
+        $_POST['main_category_id'] ?? '',
+        FILTER_VALIDATE_INT
+    );
+
+    $subcategoryId = filter_var(
+        $_POST['subcategory_id'] ?? '',
+        FILTER_VALIDATE_INT
+    );
+
+    $selectedSportId = filter_var(
+        $_POST['sport_id'] ?? '',
         FILTER_VALIDATE_INT
     );
 
     $status = $_POST['status'] ?? 'draft';
 
+    $eventStartAt = trim($_POST['event_start_at'] ?? '');
+    $eventEndAt = trim($_POST['event_end_at'] ?? '');
+    $eventVenue = trim($_POST['event_venue'] ?? '');
 
-    // Validate CSRF token
+    $registrationDeadline = trim(
+        $_POST['registration_deadline'] ?? ''
+    );
+
+    $registrationLink = trim(
+        $_POST['registration_link'] ?? ''
+    );
+
+
+    // ------------------------------------
+    // 10.1 SELECTED FACULTIES
+    // ------------------------------------
+
+    $submittedFacultyIds = $_POST['faculty_ids'] ?? [];
+
+    if (is_array($submittedFacultyIds)) {
+
+        foreach ($submittedFacultyIds as $facultyId) {
+
+            $validFacultyId = filter_var(
+                $facultyId,
+                FILTER_VALIDATE_INT
+            );
+
+            if ($validFacultyId !== false && $validFacultyId > 0) {
+                $selectedFacultyIds[] = $validFacultyId;
+            }
+        }
+    }
+
+    $selectedFacultyIds = array_values(
+        array_unique($selectedFacultyIds)
+    );
+
+
+    // ------------------------------------
+    // 10.2 CSRF VALIDATION
+    // ------------------------------------
+
     if (!csrf_is_valid()) {
-        $errors[] = 'The form session expired. Refresh the page and try again.';
+        $errors[] = 'Your form session expired. Please refresh and try again.';
     }
 
 
-    // Validate title
+    // ------------------------------------
+    // 10.3 TITLE VALIDATION
+    // ------------------------------------
+
     if ($title === '' || text_length($title) > 255) {
         $errors[] = 'Enter a title with no more than 255 characters.';
     }
 
 
-    // Validate summary
+    // ------------------------------------
+    // 10.4 SUMMARY VALIDATION
+    // ------------------------------------
+
     if (text_length($summary) > 500) {
         $errors[] = 'The summary must contain 500 characters or fewer.';
     }
 
 
-    // Validate content
+    // ------------------------------------
+    // 10.5 CONTENT VALIDATION
+    // ------------------------------------
+
     if ($content === '') {
         $errors[] = 'Enter the post content.';
     }
 
 
-    // Validate category
-    if ($categoryId === false || $categoryId < 1) {
+    // ------------------------------------
+    // 10.6 MAIN CATEGORY VALIDATION
+    // ------------------------------------
 
-        $errors[] = 'Choose a category.';
+    $selectedMainCategory = null;
+
+    if ($mainCategoryId === false || $mainCategoryId < 1) {
+
+        $errors[] = 'Choose a main category.';
 
     } else {
 
-        $categoryCheck = $pdo->prepare(
-            "SELECT COUNT(*)
-             FROM categories
-             WHERE category_id = :category_id"
-        );
+        $mainCategoryCheck = $pdo->prepare("
+            SELECT category_id, category_name
+            FROM categories
+            WHERE category_id = :category_id
+              AND parent_category_id IS NULL
+            LIMIT 1
+        ");
 
-        $categoryCheck->execute([
-            'category_id' => $categoryId
+        $mainCategoryCheck->execute([
+            'category_id' => $mainCategoryId
         ]);
 
-        if ((int) $categoryCheck->fetchColumn() === 0) {
-            $errors[] = 'The selected category does not exist.';
+        $selectedMainCategory = $mainCategoryCheck->fetch(
+            PDO::FETCH_ASSOC
+        );
+
+        if (!$selectedMainCategory) {
+
+            $errors[] = 'The selected main category is invalid.';
+
+        } elseif (
+            !in_array(
+                strtolower(trim($selectedMainCategory['category_name'])),
+                $allowedMainCategoryNames,
+                true
+            )
+        ) {
+
+            $errors[] = 'Your club is not allowed to use this main category.';
         }
     }
 
 
-    // Validate status
+    // ------------------------------------
+    // 10.7 SUBCATEGORY VALIDATION
+    // ------------------------------------
+
+    $selectedSubcategory = null;
+
+    if ($subcategoryId === false || $subcategoryId < 1) {
+
+        $errors[] = 'Choose a subcategory.';
+
+    } elseif ($mainCategoryId !== false && $mainCategoryId > 0) {
+
+        $subcategoryCheck = $pdo->prepare("
+            SELECT
+                subcategory_id,
+                category_id,
+                subcategory_name
+            FROM subcategories
+            WHERE subcategory_id = :subcategory_id
+              AND category_id = :category_id
+              AND LOWER(TRIM(subcategory_name)) <> 'clubs'
+            LIMIT 1
+        ");
+
+        $subcategoryCheck->execute([
+            'subcategory_id' => $subcategoryId,
+            'category_id' => $mainCategoryId
+        ]);
+
+        $selectedSubcategory = $subcategoryCheck->fetch(
+            PDO::FETCH_ASSOC
+        );
+
+        if (!$selectedSubcategory) {
+            $errors[] = 'Choose a valid subcategory for the selected main category.';
+        }
+    }
+
+
+    // ------------------------------------
+    // 10.8 FACULTY VALIDATION
+    // ------------------------------------
+
+    if (!empty($selectedFacultyIds)) {
+
+        $placeholders = implode(
+            ',',
+            array_fill(0, count($selectedFacultyIds), '?')
+        );
+
+        $facultyCheck = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM faculties
+            WHERE faculty_id IN ($placeholders)
+        ");
+
+        $facultyCheck->execute($selectedFacultyIds);
+
+        if (
+            (int) $facultyCheck->fetchColumn()
+            !== count($selectedFacultyIds)
+        ) {
+            $errors[] = 'One or more selected faculties are invalid.';
+        }
+    }
+
+
+    // ------------------------------------
+    // 10.9 STATUS VALIDATION
+    // ------------------------------------
+
     if (!in_array($status, ['draft', 'published'], true)) {
         $errors[] = 'Choose Draft or Published.';
     }
 
 
     // ------------------------------------
-    // 5. INSERT POST
+    // 10.10 SPORTS VALIDATION
+    // ------------------------------------
+
+    $categoryName = strtolower(
+        trim($selectedMainCategory['category_name'] ?? '')
+    );
+
+    $subcategoryName = strtolower(
+        trim($selectedSubcategory['subcategory_name'] ?? '')
+    );
+
+    $isSportsClub = strtolower($clubType) === 'sports';
+
+    $isSportsPost = ($categoryName === 'sports');
+
+    $isSportsEvent = (
+        $categoryName === 'events'
+        && $subcategoryName === 'sports events'
+    );
+
+    $requiresSport = $isSportsPost || $isSportsEvent;
+
+
+    if ($isSportsPost && !$isSportsClub) {
+        $errors[] = 'Only a Sports Club can create posts under the Sports category.';
+    }
+
+    if ($isSportsEvent && !$isSportsClub) {
+        $errors[] = 'Only a Sports Club can create Sports Events.';
+    }
+
+    if ($requiresSport) {
+
+        if ($selectedSportId === false || $selectedSportId < 1) {
+
+            $errors[] = 'Choose a sport for this post or event.';
+
+        } else {
+
+            $sportCheck = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM club_sports cs
+                INNER JOIN sports s ON cs.sport_id = s.sport_id
+                WHERE cs.club_id = :club_id
+                  AND cs.sport_id = :sport_id
+                  AND s.is_active = 1
+            ");
+
+            $sportCheck->execute([
+                'club_id' => $clubId,
+                'sport_id' => $selectedSportId
+            ]);
+
+            if ((int) $sportCheck->fetchColumn() === 0) {
+                $errors[] = 'The selected sport is not assigned to your club.';
+            }
+        }
+    }
+
+
+    // ------------------------------------
+    // 10.11 EVENT VALIDATION
+    // ------------------------------------
+
+    $eventStartSql = null;
+    $eventEndSql = null;
+    $registrationDeadlineSql = null;
+
+    if ($categoryName === 'events') {
+
+        if (
+            $eventStartAt === ''
+            || $eventEndAt === ''
+            || $eventVenue === ''
+        ) {
+            $errors[] = 'Enter the event start, end and venue.';
+        } else {
+
+            $startDate = DateTime::createFromFormat(
+                'Y-m-d\TH:i',
+                $eventStartAt
+            );
+
+            $endDate = DateTime::createFromFormat(
+                'Y-m-d\TH:i',
+                $eventEndAt
+            );
+
+            if (!$startDate || !$endDate) {
+
+                $errors[] = 'Enter valid event dates and times.';
+
+            } elseif ($endDate <= $startDate) {
+
+                $errors[] = 'The event end date and time must be after the start date and time.';
+
+            } else {
+
+                $eventStartSql = $startDate->format('Y-m-d H:i:s');
+                $eventEndSql = $endDate->format('Y-m-d H:i:s');
+            }
+        }
+
+        if ($registrationDeadline !== '') {
+
+            $deadlineDate = DateTime::createFromFormat(
+                'Y-m-d\TH:i',
+                $registrationDeadline
+            );
+
+            if (!$deadlineDate) {
+                $errors[] = 'Enter a valid registration deadline.';
+            } else {
+                $registrationDeadlineSql = $deadlineDate->format(
+                    'Y-m-d H:i:s'
+                );
+            }
+        }
+
+        if (
+            $registrationLink !== ''
+            && !filter_var($registrationLink, FILTER_VALIDATE_URL)
+        ) {
+            $errors[] = 'Enter a valid registration URL.';
+        }
+    }
+
+
+    // ------------------------------------
+    // 11. SAVE POST AND RELATED DATA
     // ------------------------------------
 
     if (empty($errors)) {
 
-        $imagePath = null;
+        $uploadedImagePaths = [];
+        $transactionStarted = false;
+        $coverImagePath = null;
 
         try {
 
-            // Upload image only if selected
+            $pdo->beginTransaction();
+            $transactionStarted = true;
+
+
+            // ------------------------------------
+            // 11.1 COVER IMAGE
+            // ------------------------------------
+
             if (
-                isset($_FILES['cover_image']) &&
-                $_FILES['cover_image']['error'] !== UPLOAD_ERR_NO_FILE
+                isset($_FILES['cover_image'])
+                && $_FILES['cover_image']['error'] !== UPLOAD_ERR_NO_FILE
             ) {
-                $imagePath = save_post_image($_FILES['cover_image']);
+
+                $coverImagePath = save_post_image(
+                    $_FILES['cover_image']
+                );
+
+                if ($coverImagePath === null) {
+                    throw new RuntimeException(
+                        'The cover image could not be uploaded.'
+                    );
+                }
+
+                $uploadedImagePaths[] = $coverImagePath;
             }
 
 
-            $insertSql = "
+            // ------------------------------------
+            // 11.2 INSERT MAIN POST
+            // ------------------------------------
+
+            $insertPost = $pdo->prepare("
                 INSERT INTO posts
                 (
                     created_by,
                     club_id,
                     category_id,
+                    subcategory_id,
+                    sport_id,
                     title,
                     summary,
                     content,
@@ -148,6 +588,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     :created_by,
                     :club_id,
                     :category_id,
+                    :subcategory_id,
+                    :sport_id,
                     :title,
                     :summary,
                     :content,
@@ -155,50 +597,252 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     :status,
                     :published_at
                 )
-            ";
+            ");
 
-            $insertStmt = $pdo->prepare($insertSql);
-
-            $insertStmt->execute([
+            $insertPost->execute([
 
                 'created_by' => $userId,
                 'club_id' => $clubId,
-                'category_id' => $categoryId,
+
+                'category_id' => $mainCategoryId,
+                'subcategory_id' => $subcategoryId,
+
+                'sport_id' => $requiresSport
+                    ? $selectedSportId
+                    : null,
+
                 'title' => $title,
-                'summary' => $summary !== '' ? $summary : null,
+
+                'summary' => $summary !== ''
+                    ? $summary
+                    : null,
+
                 'content' => $content,
-                'cover_image' => $imagePath,
+
+                'cover_image' => $coverImagePath,
+
                 'status' => $status,
 
                 'published_at' => $status === 'published'
                     ? date('Y-m-d H:i:s')
                     : null
-
             ]);
 
+            $postId = (int) $pdo->lastInsertId();
 
-            // Redirect after successful saving
+
+            // ------------------------------------
+            // 11.3 SAVE FACULTIES
+            // ------------------------------------
+
+            if (!empty($selectedFacultyIds)) {
+
+                $facultyInsert = $pdo->prepare("
+                    INSERT INTO post_faculties
+                    (post_id, faculty_id)
+                    VALUES
+                    (:post_id, :faculty_id)
+                ");
+
+                foreach ($selectedFacultyIds as $facultyId) {
+
+                    $facultyInsert->execute([
+                        'post_id' => $postId,
+                        'faculty_id' => $facultyId
+                    ]);
+                }
+            }
+
+
+            // ------------------------------------
+            // 11.4 SAVE EVENT DETAILS
+            // ------------------------------------
+
+            if ($categoryName === 'events') {
+
+                $startDateObject = new DateTime($eventStartSql);
+                $endDateObject = new DateTime($eventEndSql);
+
+                $eventInsert = $pdo->prepare("
+                    INSERT INTO events
+                    (
+                        post_id,
+                        event_date,
+                        start_time,
+                        end_time,
+                        start_at,
+                        end_at,
+                        venue,
+                        registration_deadline,
+                        registration_link
+                    )
+                    VALUES
+                    (
+                        :post_id,
+                        :event_date,
+                        :start_time,
+                        :end_time,
+                        :start_at,
+                        :end_at,
+                        :venue,
+                        :registration_deadline,
+                        :registration_link
+                    )
+                ");
+
+                $eventInsert->execute([
+
+                    'post_id' => $postId,
+
+                    'event_date' => $startDateObject->format('Y-m-d'),
+                    'start_time' => $startDateObject->format('H:i:s'),
+                    'end_time' => $endDateObject->format('H:i:s'),
+
+                    'start_at' => $eventStartSql,
+                    'end_at' => $eventEndSql,
+
+                    'venue' => $eventVenue,
+
+                    'registration_deadline' => $registrationDeadlineSql,
+
+                    'registration_link' => $registrationLink !== ''
+                        ? $registrationLink
+                        : null
+                ]);
+            }
+
+
+            // ------------------------------------
+            // 11.5 ADDITIONAL IMAGES
+            // ------------------------------------
+
+            if (
+                isset($_FILES['additional_images'])
+                && is_array($_FILES['additional_images']['name'])
+            ) {
+
+                $additionalImages = $_FILES['additional_images'];
+
+                $imageCount = 0;
+
+                foreach ($additionalImages['error'] as $errorCode) {
+
+                    if ($errorCode !== UPLOAD_ERR_NO_FILE) {
+                        $imageCount++;
+                    }
+                }
+
+                if ($imageCount > 5) {
+                    throw new RuntimeException(
+                        'You can upload a maximum of 5 additional images.'
+                    );
+                }
+
+                $imageInsert = $pdo->prepare("
+                    INSERT INTO post_images
+                    (
+                        post_id,
+                        image_path,
+                        alt_text,
+                        display_order
+                    )
+                    VALUES
+                    (
+                        :post_id,
+                        :image_path,
+                        :alt_text,
+                        :display_order
+                    )
+                ");
+
+                $displayOrder = 1;
+
+                for (
+                    $i = 0;
+                    $i < count($additionalImages['name']);
+                    $i++
+                ) {
+
+                    if (
+                        $additionalImages['error'][$i]
+                        === UPLOAD_ERR_NO_FILE
+                    ) {
+                        continue;
+                    }
+
+                    $singleImage = [
+                        'name' => $additionalImages['name'][$i],
+                        'type' => $additionalImages['type'][$i],
+                        'tmp_name' => $additionalImages['tmp_name'][$i],
+                        'error' => $additionalImages['error'][$i],
+                        'size' => $additionalImages['size'][$i]
+                    ];
+
+                    $additionalImagePath = save_post_image(
+                        $singleImage
+                    );
+
+                    if ($additionalImagePath === null) {
+                        throw new RuntimeException(
+                            'One of the additional images could not be uploaded.'
+                        );
+                    }
+
+                    $uploadedImagePaths[] = $additionalImagePath;
+
+                    $imageInsert->execute([
+
+                        'post_id' => $postId,
+
+                        'image_path' => $additionalImagePath,
+
+                        'alt_text' => null,
+
+                        'display_order' => $displayOrder
+                    ]);
+
+                    $displayOrder++;
+                }
+            }
+
+
+            // ------------------------------------
+            // 11.6 COMMIT
+            // ------------------------------------
+
+            $pdo->commit();
+            $transactionStarted = false;
+
             header('Location: manage-posts.php?created=1');
             exit;
 
 
         } catch (RuntimeException $exception) {
 
-            if ($imagePath !== null) {
-                delete_post_image($imagePath);
+            if ($transactionStarted && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            foreach ($uploadedImagePaths as $uploadedPath) {
+                delete_post_image($uploadedPath);
             }
 
             $errors[] = $exception->getMessage();
 
 
-        } catch (PDOException $exception) {
+        } catch (Throwable $exception) {
 
-            if ($imagePath !== null) {
-                delete_post_image($imagePath);
+            if ($transactionStarted && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            foreach ($uploadedImagePaths as $uploadedPath) {
+                delete_post_image($uploadedPath);
             }
 
             error_log(
-                'NEWS 360 create post error: ' . $exception->getMessage()
+                'NEWS 360 create post error: '
+                . $exception->getMessage()
             );
 
             $errors[] = 'The post could not be saved. Please check the database and try again.';
@@ -208,7 +852,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 // ------------------------------------
-// 6. INCLUDE PRESIDENT HEADER
+// 12. INCLUDE HEADER
 // ------------------------------------
 
 require_once __DIR__ . '/president_header.php';
@@ -220,11 +864,7 @@ require_once __DIR__ . '/president_header.php';
 
     <?php require __DIR__ . '/president_sidebar.php'; ?>
 
-
     <main class="main-content">
-
-
-        <!-- PAGE HEADER -->
 
         <div class="page-header">
 
@@ -244,13 +884,11 @@ require_once __DIR__ . '/president_header.php';
                 href="manage-posts.php"
                 class="button button-secondary"
             >
+                <span aria-hidden="true">←</span>
                 Back to My Posts
             </a>
-
         </div>
 
-
-        <!-- VALIDATION ERRORS -->
 
         <?php if (!empty($errors)): ?>
 
@@ -259,13 +897,9 @@ require_once __DIR__ . '/president_header.php';
                 <strong>Please check the following:</strong>
 
                 <ul>
-
                     <?php foreach ($errors as $error): ?>
-
                         <li><?= e($error) ?></li>
-
                     <?php endforeach; ?>
-
                 </ul>
 
             </div>
@@ -273,32 +907,32 @@ require_once __DIR__ . '/president_header.php';
         <?php endif; ?>
 
 
-        <!-- CATEGORY WARNING -->
-
-        <?php if (empty($categories)): ?>
+        <?php if (empty($mainCategories) || empty($subCategories)): ?>
 
             <div class="alert alert-warning">
-
-                There are no categories available.
-                Please ask the administrator to add categories.
-
+                Main categories or subcategories are not available.
+                Please check the categories and subcategories tables.
             </div>
 
         <?php endif; ?>
 
 
-        <!-- CREATE POST FORM -->
+        <?php if (empty($faculties)): ?>
+
+            <div class="alert alert-warning">
+                No faculties are available.
+            </div>
+
+        <?php endif; ?>
+
 
         <section class="content-card form-card">
 
             <div class="section-heading">
 
                 <div>
-
                     <h2>Post Information</h2>
-
                     <p>Fields marked with * are required.</p>
-
                 </div>
 
             </div>
@@ -337,32 +971,71 @@ require_once __DIR__ . '/president_header.php';
                 </div>
 
 
-                <!-- CATEGORY AND STATUS -->
+                <!-- CATEGORIES AND STATUS -->
 
                 <div class="form-grid">
 
                     <div class="form-group">
 
-                        <label for="category_id">Category *</label>
+                        <label for="main_category_id">
+                            Main Category *
+                        </label>
 
                         <select
-                            id="category_id"
-                            name="category_id"
+                            id="main_category_id"
+                            name="main_category_id"
+                            data-club-type="<?= e($clubType) ?>"
                             required
-                            <?= empty($categories) ? 'disabled' : '' ?>
+                            <?= empty($mainCategories) ? 'disabled' : '' ?>
                         >
 
                             <option value="">
-                                Choose a category
+                                Choose a main category
                             </option>
 
-                            <?php foreach ($categories as $category): ?>
+                            <?php foreach ($mainCategories as $category): ?>
 
                                 <option
                                     value="<?= (int) $category['category_id'] ?>"
-                                    <?= (string) $categoryId === (string) $category['category_id'] ? 'selected' : '' ?>
+                                    data-category-name="<?= e($category['category_name']) ?>"
+                                    <?= (string) $mainCategoryId === (string) $category['category_id'] ? 'selected' : '' ?>
                                 >
                                     <?= e($category['category_name']) ?>
+                                </option>
+
+                            <?php endforeach; ?>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="subcategory_id">
+                            Subcategory *
+                        </label>
+
+                        <select
+                            id="subcategory_id"
+                            name="subcategory_id"
+                            required
+                            <?= empty($subCategories) ? 'disabled' : '' ?>
+                        >
+
+                            <option value="">
+                                Choose a subcategory
+                            </option>
+
+                            <?php foreach ($subCategories as $subcategory): ?>
+
+                                <option
+                                    value="<?= (int) $subcategory['subcategory_id'] ?>"
+                                    data-parent-id="<?= (int) $subcategory['category_id'] ?>"
+                                    data-subcategory-name="<?= e($subcategory['subcategory_name']) ?>"
+                                    <?= (string) $subcategoryId === (string) $subcategory['subcategory_id'] ? 'selected' : '' ?>
+                                >
+                                    <?= e($subcategory['subcategory_name']) ?>
                                 </option>
 
                             <?php endforeach; ?>
@@ -397,6 +1070,193 @@ require_once __DIR__ . '/president_header.php';
                         <small>
                             Save as Draft or publish immediately.
                         </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- SPORTS SECTION -->
+
+                <div
+                    class="form-group"
+                    id="sport-section"
+                    hidden
+                >
+
+                    <label for="sport_id">Select Sport *</label>
+
+                    <select
+                        id="sport_id"
+                        name="sport_id"
+                    >
+
+                        <option value="">Choose a sport</option>
+
+                        <?php foreach ($sports as $sport): ?>
+
+                            <option
+                                value="<?= (int) $sport['sport_id'] ?>"
+                                <?= (string) $selectedSportId === (string) $sport['sport_id'] ? 'selected' : '' ?>
+                            >
+                                <?= e($sport['sport_name']) ?>
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
+                    <small>
+                        Only sports assigned to your club are displayed.
+                    </small>
+
+                    <?php if (empty($sports)): ?>
+
+                        <small>
+                            No active sports are assigned to your club.
+                            Please contact the administrator.
+                        </small>
+
+                    <?php endif; ?>
+
+                </div>
+
+
+                <!-- EVENT SECTION -->
+
+                <div id="event-section" hidden>
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Event Information</h2>
+                            <p>Enter the details of your event.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="event_start_at">
+                                Event Start Date & Time *
+                            </label>
+
+                            <input
+                                type="datetime-local"
+                                id="event_start_at"
+                                name="event_start_at"
+                                value="<?= e($eventStartAt) ?>"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="event_end_at">
+                                Event End Date & Time *
+                            </label>
+
+                            <input
+                                type="datetime-local"
+                                id="event_end_at"
+                                name="event_end_at"
+                                value="<?= e($eventEndAt) ?>"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="event_venue">
+                                Event Venue *
+                            </label>
+
+                            <input
+                                type="text"
+                                id="event_venue"
+                                name="event_venue"
+                                maxlength="255"
+                                value="<?= e($eventVenue) ?>"
+                                placeholder="Enter event venue"
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="registration_deadline">
+                                Registration Deadline
+                            </label>
+
+                            <input
+                                type="datetime-local"
+                                id="registration_deadline"
+                                name="registration_deadline"
+                                value="<?= e($registrationDeadline) ?>"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="registration_link">
+                            Registration Link
+                        </label>
+
+                        <input
+                            type="url"
+                            id="registration_link"
+                            name="registration_link"
+                            maxlength="500"
+                            value="<?= e($registrationLink) ?>"
+                            placeholder="https://example.com/register"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- FACULTIES -->
+
+                <div class="form-group faculty-checkbox-group">
+
+                    <label>Relevant Faculties</label>
+
+                    <small>
+                        Select the faculties that this post is relevant to.
+                        You can select more than one.
+                    </small>
+
+                    <div class="form-grid">
+
+                        <?php foreach ($faculties as $faculty): ?>
+
+                            <label>
+
+                                <input
+                                    type="checkbox"
+                                    name="faculty_ids[]"
+                                    value="<?= (int) $faculty['faculty_id'] ?>"
+                                    <?= in_array(
+                                        (int) $faculty['faculty_id'],
+                                        $selectedFacultyIds,
+                                        true
+                                    ) ? 'checked' : '' ?>
+                                >
+
+                                <?= e($faculty['faculty_name']) ?>
+
+                            </label>
+
+                        <?php endforeach; ?>
 
                     </div>
 
@@ -457,7 +1317,30 @@ require_once __DIR__ . '/president_header.php';
                 </div>
 
 
-                <!-- FORM BUTTONS -->
+                <!-- ADDITIONAL IMAGES -->
+
+                <div class="form-group">
+
+                    <label for="additional_images">
+                        Additional Images
+                    </label>
+
+                    <input
+                        type="file"
+                        id="additional_images"
+                        name="additional_images[]"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                    >
+
+                    <small>
+                        Optional. Upload up to 5 additional JPG, PNG or WEBP images.
+                    </small>
+
+                </div>
+
+
+                <!-- BUTTONS -->
 
                 <div class="form-actions">
 
@@ -468,11 +1351,10 @@ require_once __DIR__ . '/president_header.php';
                         Cancel
                     </a>
 
-
                     <button
                         type="submit"
                         class="button button-primary"
-                        <?= empty($categories) ? 'disabled' : '' ?>
+                        <?= empty($mainCategories) || empty($subCategories) ? 'disabled' : '' ?>
                     >
                         Save Post
                     </button>
@@ -486,6 +1368,9 @@ require_once __DIR__ . '/president_header.php';
     </main>
 
 </div>
+
+
+<script src="/NSBM_360/assets/js/president-create-post.js" defer></script>
 
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
