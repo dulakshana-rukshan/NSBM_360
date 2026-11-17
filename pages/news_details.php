@@ -40,13 +40,35 @@ if (!$row) {
 }
 
 // 4. Configure Header & CSS paths relative to the pages/ folder
-$activePage = 'news';
+$categoryNameLower = strtolower(trim($row['category_name'] ?? 'news'));
+
+// ඩේටාබේස් එකේ කැටගරි එක මත පදනම්ව Navbar Active Page එක ස්වයංක්‍රීයව වෙනස් වීම
+if (strpos($categoryNameLower, 'sport') !== false) {
+    $activePage = 'sports';
+} elseif (strpos($categoryNameLower, 'academic') !== false) {
+    $activePage = 'academics';
+} elseif (strpos($categoryNameLower, 'club') !== false) {
+    $activePage = 'clubs';
+} else {
+    $activePage = 'news';
+}
+
 $pageCSS = '../assets/css/news_details.css';
 $pageTitle = htmlspecialchars($row['title']) . ' | NSBM 360';
 
 // Include modular header and navbar
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/navbar.php';
+
+// Fetch Upcoming Event for Sidebar dynamically
+$event = null;
+try {
+    $eventSql = "SELECT * FROM events ORDER BY event_date DESC LIMIT 1";
+    $eventStmt = $pdo->query($eventSql);
+    $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
+} catch (\PDOException $e) {
+    $event = null;
+}
 
 // Safe fallbacks for display fields
 $authorName = !empty(trim($row['author_name'] ?? '')) ? $row['author_name'] : 'NSBM Editorial';
@@ -98,19 +120,38 @@ $displayDate = !empty($row['published_at']) ? $row['published_at'] : ($row['crea
 
         <!-- Right Sidebar Column -->
         <aside class="sidebar">
-            <!-- Event Widget Card -->
-            <div
-class="sidebar-card event-card">
-                <div class="event-card-img">
-                    <img src="https://via.placeholder.com/300x160" alt="Tree Planting">
-                </div>
-                <div class="event-card-content">
-                    <span class="be-part-title">Be part of the story</span>
-                    <span class="upcoming-badge">UPCOMING EVENT</span>
-                    <h3>Green Heart: Campus Tree Planting Day</h3>
-                    <p><strong>24 October 2026</strong><br>8:00 AM – 11:00 AM<br>Green University Grounds</p>
-                    <a href="events.php" class="btn-green">View event details</a>
-                </div>
+            <!-- Event Widget Card (Dynamic) -->
+            <div class="sidebar-card event-card">
+                <?php if ($event): ?>
+                    <?php 
+                        $eventName = htmlspecialchars($event['event_name'] ?? $event['title'] ?? 'Upcoming Event');
+                        $eventDate = !empty($event['event_date']) ? date('d F Y', strtotime($event['event_date'])) : 'TBA';
+                        $eventTime = (!empty($event['start_time']) && !empty($event['end_time'])) ? date('g:i A', strtotime($event['start_time'])) . ' – ' . date('g:i A', strtotime($event['end_time'])) : '';
+                        $eventLocation = htmlspecialchars($event['location'] ?? 'Green University Grounds');
+                        $eventImage = !empty($event['image']) ? $event['image'] : 'https://via.placeholder.com/300x160';
+                        $eventId = (int)($event['event_id'] ?? 1);
+                    ?>
+                    <div class="event-card-img">
+                        <img src="<?= htmlspecialchars($eventImage) ?>" alt="<?= $eventName ?>">
+                    </div>
+                    <div class="event-card-content">
+                        <span class="be-part-title">Be part of the story</span>
+                        <span class="upcoming-badge">UPCOMING EVENT</span>
+                        <h3><?= $eventName ?></h3>
+                        <p>
+                            <strong><?= $eventDate ?></strong>
+                            <?php if ($eventTime): ?><br><?= $eventTime ?><?php endif; ?>
+                            <br><?= $eventLocation ?>
+                        </p>
+                        <a href="event_detail.php?id=<?= $eventId ?>" class="btn-green">View event details</a>
+                    </div>
+                <?php else: ?>
+                    <div class="event-card-content">
+                        <span class="upcoming-badge">UPCOMING EVENT</span>
+                        <h3>No upcoming events right now</h3>
+                        <p>Stay tuned for campus happenings and announcements.</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- About Widget Card -->
