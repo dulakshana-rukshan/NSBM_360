@@ -9,26 +9,32 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 
 
 // ------------------------------------
-// 2. CHECK ACTIVE SIDEBAR SECTIONS
+// 2. CHECK ACTIVE SIDEBAR SECTION
 // ------------------------------------
 
 $isManageArea = in_array(
     $currentPage,
-    ['manage-posts.php', 'edit-post.php', 'view-post.php'],
+    [
+        'manage-posts.php',
+        'edit-post.php',
+        'view-post.php',
+        'view-event.php'
+    ],
     true
 );
 
-$isEditArea = ($currentPage === 'edit-post.php');
 
-$isEventArea = in_array(
-    $currentPage,
-    ['create-event.php', 'view-event.php', 'edit-event.php'],
-    true
-);
+// ------------------------------------
+// 3. GET DYNAMIC CLUB TYPE
+// ------------------------------------
+
+$sidebarClubType = ($clubType ?? '') === 'sports'
+    ? 'SPORTS CLUB'
+    : 'GENERAL CLUB';
 
 ?>
 
-<aside class="sidebar">
+<aside class="sidebar" id="presidentSidebar">
 
     <!-- SIDEBAR HEADING -->
     <div class="sidebar-heading">
@@ -45,9 +51,33 @@ $isEventArea = in_array(
     <!-- ASSIGNED CLUB INFORMATION -->
     <div class="club-card">
 
-        <div class="club-avatar" aria-hidden="true">
-            360
+        <div class="club-avatar">
+
+            <?php if (!empty($clubLogo)): ?>
+
+                <img
+                    src="/NSBM_360/<?= e(ltrim($clubLogo, '/')) ?>"
+                    alt="<?= e($clubName ?? 'Club') ?> Logo"
+                    onerror="
+                        this.style.display='none';
+                        this.nextElementSibling.style.display='flex';
+                    "
+                >
+
+                <span class="club-logo-fallback" style="display:none;">
+                    360
+                </span>
+
+            <?php else: ?>
+
+                <span class="club-logo-fallback">
+                    360
+                </span>
+
+            <?php endif; ?>
+
         </div>
+
 
         <div class="club-card-text">
 
@@ -59,8 +89,14 @@ $isEventArea = in_array(
                 <?= e($clubName ?? 'Club Name') ?>
             </strong>
 
+            <span class="club-type-label">
+                <?= e($sidebarClubType) ?>
+            </span>
+
             <span class="role-label">
-                Club President
+                <?= ($clubRole ?? '') === 'vice_president'
+                    ? 'Vice President'
+                    : 'Club President' ?>
             </span>
 
         </div>
@@ -70,7 +106,6 @@ $isEventArea = in_array(
 
     <!-- PRESIDENT NAVIGATION -->
     <nav class="sidebar-menu" aria-label="President navigation">
-
 
         <!-- CLUB OVERVIEW -->
         <a
@@ -86,7 +121,7 @@ $isEventArea = in_array(
         </a>
 
 
-        <!-- MANAGE POSTS -->
+        <!-- MANAGE MY POSTS -->
         <a
             class="side-link <?= $isManageArea ? 'active' : '' ?>"
             href="manage-posts.php"
@@ -114,23 +149,6 @@ $isEventArea = in_array(
         </a>
 
 
-        <!-- CREATE EVENT -->
-        <a
-            class="side-link <?= $currentPage === 'create-event.php' ? 'active' : '' ?>"
-            href="create-event.php"
-            <?= $currentPage === 'create-event.php' ? 'aria-current="page"' : '' ?>
-        >
-
-            <span><i class="bi bi-calendar-plus"></i></span>
-            
-
-            <span>Create New Event</span>
-
-        </a>
-
-
-       
-
         <!-- MY PROFILE -->
         <a
             class="side-link <?= $currentPage === 'profile.php' ? 'active' : '' ?>"
@@ -148,7 +166,7 @@ $isEventArea = in_array(
         <div class="sidebar-divider"></div>
 
 
-        <!-- PUBLIC WEBSITE -->
+        <!-- VIEW PUBLIC WEBSITE -->
         <a
             class="side-link"
             href="/NSBM_360/index.php"
@@ -172,7 +190,6 @@ $isEventArea = in_array(
             <span>Sign Out</span>
 
         </a>
-
 
     </nav>
 
