@@ -1,9 +1,5 @@
-
+```php
 <?php
-
-// --------------------------------------------------
-// 1. PRESIDENT AUTHENTICATION
-// --------------------------------------------------
 
 require_once __DIR__ . '/president_auth.php';
 require_once __DIR__ . '/president_functions.php';
@@ -13,9 +9,7 @@ $pageCSS = '/NSBM_360/club/president.css';
 $isPresidentPage = true;
 
 
-// --------------------------------------------------
 // SOCIAL MEDIA ICON HELPER
-// --------------------------------------------------
 
 $getSocialIcon = static function ($platform) {
 
@@ -39,9 +33,7 @@ $getSocialIcon = static function ($platform) {
 };
 
 
-// --------------------------------------------------
-// 2. CLUB PROFILE AND SOCIAL LINKS EDITING
-// --------------------------------------------------
+// CLUB PROFILE AND SOCIAL LINKS EDITING
 
 if (empty($_SESSION['dashboard_club_csrf'])) {
     $_SESSION['dashboard_club_csrf'] = bin2hex(random_bytes(32));
@@ -51,9 +43,7 @@ $profileErrors = [];
 $profileSuccess = '';
 
 
-// --------------------------------------------------
 // HANDLE SAVE CHANGES
-// --------------------------------------------------
 
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
@@ -76,9 +66,7 @@ if (
     }
 
 
-    // --------------------------------------------------
     // VALIDATE SOCIAL MEDIA LINKS
-    // --------------------------------------------------
 
     $submittedIds = $_POST['link_id'] ?? [];
     $submittedPlatforms = $_POST['platform'] ?? [];
@@ -192,9 +180,7 @@ if (
     $currentClub = null;
 
 
-    // --------------------------------------------------
     // SAVE PROFILE AND SOCIAL LINKS
-    // --------------------------------------------------
 
     if (empty($profileErrors)) {
 
@@ -364,9 +350,7 @@ if (
 }
 
 
-// --------------------------------------------------
-// 3. GET LATEST CLUB PROFILE
-// --------------------------------------------------
+// GET LATEST CLUB PROFILE
 
 $profileStmt = $pdo->prepare("
     SELECT description, logo, banner
@@ -383,9 +367,7 @@ if (!$clubProfile) {
 }
 
 
-// --------------------------------------------------
-// 4. GET CLUB SOCIAL LINKS
-// --------------------------------------------------
+// GET CLUB SOCIAL LINKS
 
 $linksStmt = $pdo->prepare("
     SELECT link_id, platform, url
@@ -404,9 +386,7 @@ if (isset($_SESSION['club_profile_success'])) {
 }
 
 
-// --------------------------------------------------
-// 5. GET POST STATISTICS
-// --------------------------------------------------
+// GET POST STATISTICS
 
 $statsQuery = "
     SELECT
@@ -422,9 +402,7 @@ $statsStmt->execute(['club_id' => $clubId]);
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
 
 
-// --------------------------------------------------
-// 6. GET TOTAL EVENTS
-// --------------------------------------------------
+// GET TOTAL EVENTS
 
 $eventCountQuery = "
     SELECT COUNT(*)
@@ -438,9 +416,7 @@ $eventCountStmt->execute(['club_id' => $clubId]);
 $totalEvents = (int) $eventCountStmt->fetchColumn();
 
 
-// --------------------------------------------------
-// 7. GET MONTHLY ACTIVITY
-// --------------------------------------------------
+// GET MONTHLY ACTIVITY
 
 $monthlyQuery = "
     SELECT
@@ -460,9 +436,7 @@ $monthlyStmt->execute(['club_id' => $clubId]);
 $monthlyActivity = $monthlyStmt->fetch(PDO::FETCH_ASSOC);
 
 
-// --------------------------------------------------
-// 8. GET CATEGORY OVERVIEW
-// --------------------------------------------------
+// GET CATEGORY OVERVIEW
 
 $categoryQuery = "
     SELECT
@@ -480,9 +454,7 @@ $categoryStmt->execute(['club_id' => $clubId]);
 $categoryOverview = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// --------------------------------------------------
-// 9. GET LATEST POSTS
-// --------------------------------------------------
+// GET LATEST POSTS
 
 $postsQuery = "
     SELECT
@@ -503,9 +475,7 @@ $postsStmt->execute(['club_id' => $clubId]);
 $latestPosts = $postsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// --------------------------------------------------
-// 10. GET NEXT UPCOMING EVENT
-// --------------------------------------------------
+// GET NEXT UPCOMING EVENT
 
 $eventQuery = "
     SELECT
@@ -528,10 +498,6 @@ $eventStmt = $pdo->prepare($eventQuery);
 $eventStmt->execute(['club_id' => $clubId]);
 $upcomingEvent = $eventStmt->fetch(PDO::FETCH_ASSOC);
 
-
-// --------------------------------------------------
-// 11. INCLUDE HEADER
-// --------------------------------------------------
 
 require_once __DIR__ . '/president_header.php';
 
@@ -1069,7 +1035,7 @@ require_once __DIR__ . '/president_header.php';
                     <span>Create New Post</span>
                 </a>
 
-                <a href="create-event.php" class="quick-action-item">
+                <a href="create-post.php" class="quick-action-item">
                     <i class="bi bi-calendar-plus"></i>
                     <span>Create Event</span>
                 </a>
@@ -1248,7 +1214,7 @@ require_once __DIR__ . '/president_header.php';
 </div>
 
 
-<!-- LOAD EXISTING DASHBOARD JAVASCRIPT -->
 <script src="/NSBM_360/assets/js/president-dashboard.js" defer></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+```
