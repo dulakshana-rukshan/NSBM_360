@@ -4,7 +4,7 @@
 require_once __DIR__ . '/president_auth.php';
 
 // ------------------------------------
-// 1. PAGE SETTINGS
+// PAGE SETTINGS
 // ------------------------------------
 
 $pageTitle = 'Create New Post | NEWS 360';
@@ -13,7 +13,7 @@ $isPresidentPage = true;
 
 
 // ------------------------------------
-// 2. VERIFY CLUB MEMBERSHIP
+// VERIFY CLUB MEMBERSHIP
 // ------------------------------------
 
 $membershipStmt = $pdo->prepare("
@@ -49,7 +49,7 @@ $clubName = $membership['club_name'];
 
 
 // ------------------------------------
-// 3. DEFINE ALLOWED MAIN CATEGORIES
+// DEFINE ALLOWED MAIN CATEGORIES
 // ------------------------------------
 
 if (strtolower($clubType) === 'sports') {
@@ -65,14 +65,13 @@ $categoryPlaceholders = implode(
 
 
 // ------------------------------------
-// 4. LOAD ALLOWED MAIN CATEGORIES
+// LOAD ALLOWED MAIN CATEGORIES
 // ------------------------------------
 
 $mainCategoriesStmt = $pdo->prepare("
     SELECT category_id, category_name
     FROM categories
-    WHERE parent_category_id IS NULL
-      AND LOWER(TRIM(category_name)) IN ($categoryPlaceholders)
+    WHERE LOWER(TRIM(category_name)) IN ($categoryPlaceholders)
     ORDER BY category_name
 ");
 
@@ -82,8 +81,7 @@ $mainCategories = $mainCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // ------------------------------------
-// 5. LOAD SUBCATEGORIES
-// Exclude Clubs subcategory
+// LOAD SUBCATEGORIES
 // ------------------------------------
 
 $subCategoriesStmt = $pdo->query("
@@ -100,7 +98,7 @@ $subCategories = $subCategoriesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // ------------------------------------
-// 6. LOAD FACULTIES
+// LOAD FACULTIES
 // ------------------------------------
 
 $facultiesStmt = $pdo->query("
@@ -113,7 +111,7 @@ $faculties = $facultiesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // ------------------------------------
-// 7. LOAD SPORTS ASSIGNED TO THIS CLUB
+// LOAD SPORTS ASSIGNED TO THIS CLUB
 // ------------------------------------
 
 $sportsStmt = $pdo->prepare("
@@ -133,7 +131,7 @@ $sports = $sportsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 // ------------------------------------
-// 8. FIND MAIN CATEGORY IDs
+// FIND MAIN CATEGORY IDs
 // ------------------------------------
 
 $categoryIds = [];
@@ -149,7 +147,7 @@ $sportsCategoryId = $categoryIds['sports'] ?? null;
 
 
 // ------------------------------------
-// 9. FORM VARIABLES
+// FORM VARIABLES
 // ------------------------------------
 
 $errors = [];
@@ -174,7 +172,7 @@ $registrationLink = '';
 
 
 // ------------------------------------
-// 10. PROCESS FORM
+// PROCESS FORM
 // ------------------------------------
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -213,9 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // ------------------------------------
-    // 10.1 SELECTED FACULTIES
-    // ------------------------------------
+    // SELECTED FACULTIES
 
     $submittedFacultyIds = $_POST['faculty_ids'] ?? [];
 
@@ -239,45 +235,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // ------------------------------------
-    // 10.2 CSRF VALIDATION
-    // ------------------------------------
-
     if (!csrf_is_valid()) {
         $errors[] = 'Your form session expired. Please refresh and try again.';
     }
 
-
-    // ------------------------------------
-    // 10.3 TITLE VALIDATION
-    // ------------------------------------
 
     if ($title === '' || text_length($title) > 255) {
         $errors[] = 'Enter a title with no more than 255 characters.';
     }
 
 
-    // ------------------------------------
-    // 10.4 SUMMARY VALIDATION
-    // ------------------------------------
+    // SUMMARY VALIDATION
 
     if (text_length($summary) > 500) {
         $errors[] = 'The summary must contain 500 characters or fewer.';
     }
 
 
-    // ------------------------------------
-    // 10.5 CONTENT VALIDATION
-    // ------------------------------------
+    // CONTENT VALIDATION
 
     if ($content === '') {
         $errors[] = 'Enter the post content.';
     }
 
 
-    // ------------------------------------
-    // 10.6 MAIN CATEGORY VALIDATION
-    // ------------------------------------
+    // MAIN CATEGORY VALIDATION
 
     $selectedMainCategory = null;
 
@@ -288,11 +270,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
 
         $mainCategoryCheck = $pdo->prepare("
-            SELECT category_id, category_name
-            FROM categories
-            WHERE category_id = :category_id
-              AND parent_category_id IS NULL
-            LIMIT 1
+        SELECT category_id, category_name
+        FROM categories
+        WHERE category_id = :category_id
+        LIMIT 1
         ");
 
         $mainCategoryCheck->execute([
@@ -320,9 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 10.7 SUBCATEGORY VALIDATION
-    // ------------------------------------
+    // SUBCATEGORY VALIDATION
 
     $selectedSubcategory = null;
 
@@ -359,9 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 10.8 FACULTY VALIDATION
-    // ------------------------------------
+    // FACULTY VALIDATION
 
     if (!empty($selectedFacultyIds)) {
 
@@ -387,18 +364,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 10.9 STATUS VALIDATION
-    // ------------------------------------
+    // STATUS VALIDATION
 
     if (!in_array($status, ['draft', 'published'], true)) {
         $errors[] = 'Choose Draft or Published.';
     }
 
 
-    // ------------------------------------
-    // 10.10 SPORTS VALIDATION
-    // ------------------------------------
+    // SPORTS VALIDATION
 
     $categoryName = strtolower(
         trim($selectedMainCategory['category_name'] ?? '')
@@ -457,9 +430,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 10.11 EVENT VALIDATION
-    // ------------------------------------
+    // EVENT VALIDATION
 
     $eventStartSql = null;
     $eventEndSql = null;
@@ -525,9 +496,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 11. SAVE POST AND RELATED DATA
-    // ------------------------------------
+    // SAVE POST AND RELATED DATA
 
     if (empty($errors)) {
 
@@ -541,9 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $transactionStarted = true;
 
 
-            // ------------------------------------
-            // 11.1 COVER IMAGE
-            // ------------------------------------
+            // COVER IMAGE
 
             if (
                 isset($_FILES['cover_image'])
@@ -564,9 +531,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // ------------------------------------
-            // 11.2 INSERT MAIN POST
-            // ------------------------------------
+            // INSERT MAIN POST
 
             $insertPost = $pdo->prepare("
                 INSERT INTO posts
@@ -631,9 +596,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postId = (int) $pdo->lastInsertId();
 
 
-            // ------------------------------------
-            // 11.3 SAVE FACULTIES
-            // ------------------------------------
+            // SAVE FACULTIES
 
             if (!empty($selectedFacultyIds)) {
 
@@ -654,9 +617,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // ------------------------------------
-            // 11.4 SAVE EVENT DETAILS
-            // ------------------------------------
+            // SAVE EVENT DETAILS
 
             if ($categoryName === 'events') {
 
@@ -712,9 +673,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // ------------------------------------
-            // 11.5 ADDITIONAL IMAGES
-            // ------------------------------------
+            // ADDITIONAL IMAGES
 
             if (
                 isset($_FILES['additional_images'])
@@ -806,9 +765,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // ------------------------------------
-            // 11.6 COMMIT
-            // ------------------------------------
+            // COMMIT
 
             $pdo->commit();
             $transactionStarted = false;
@@ -852,7 +809,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 // ------------------------------------
-// 12. INCLUDE HEADER
+// INCLUDE HEADER
 // ------------------------------------
 
 require_once __DIR__ . '/president_header.php';
