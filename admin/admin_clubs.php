@@ -15,7 +15,7 @@ session_start();
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($adminId < 1) {
     http_response_code(401);
-    include __DIR__ . '/../admin_access_denied.php';
+    include __DIR__ . '/../admin/admin_access_denied.php';
     exit;
 }
 
@@ -172,9 +172,8 @@ include __DIR__ . '/../includes/navbar.php';
 
         <div class="sidebar-bottom">
             <p>Manage platform accounts, club assignments and official campus content.</p>
-            <a href="index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
-            <form method="post">
-                <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+            <a href="../index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
+            <form method="post" action="/NSBM_360/auth/logout.php">
                 <button type="submit" class="signout" name="action" value="logout">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign out
                 </button>
@@ -324,10 +323,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             $presidentId = (int) ($_POST['president_id'] ?? 0);
             $viceId      = (int) ($_POST['vice_id'] ?? 0);
 
-            if ($clubId < 1 || $presidentId < 1) {
-                throw new Exception('Club and President selection are required.');
+            if ($clubId < 1) {
+                throw new Exception('Invalid club selection.');
             }
-            if ($viceId > 0 && $presidentId === $viceId) {
+            if ($presidentId > 0 && $viceId > 0 && $presidentId === $viceId) {
                 throw new Exception('The President and Vice President cannot be the same person.');
             }
 
@@ -337,11 +336,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
                 [$clubId]
             );
 
-            run_sql(
-                $pdo,
-                'INSERT INTO club_memberships (user_id, club_id, club_role, membership_status) VALUES (?, ?, "president", "active")',
-                [$presidentId, $clubId]
-            );
+            if ($presidentId > 0) {
+                run_sql(
+                    $pdo,
+                    'INSERT INTO club_memberships (user_id, club_id, club_role, membership_status) VALUES (?, ?, "president", "active")',
+                    [$presidentId, $clubId]
+                );
+            }
 
             if ($viceId > 0) {
                 run_sql(
@@ -465,12 +466,12 @@ if ($selected) {
     }
 }
 
-admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned leadership.', 'clubs');
+admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned leadership.', 'clubs');
 ?>
 
 <!-- Top Create Club Action -->
 <div class="page-actions">
-    <a class="btn btn-green" href="admin_clubs.php?new=1#club-form">＋ Create club</a>
+    <a class="btn btn-green" href="admin_clubs.php?new=1#club-form">＋ Create Club</a>
 </div>
 
 <?php if ($error): ?>
@@ -494,14 +495,14 @@ admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned 
 <!-- Search & Filter Form -->
 <form class="panel filters" method="get">
     <div class="field field-grow">
-        <label>Search clubs</label>
+        <label>Search Clubs</label>
         <input name="search" placeholder="Search club name or description" value="<?= e($search) ?>">
     </div>
 
     <div class="field field-select">
         <label>Status</label>
         <select name="status">
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             <?php foreach (['active', 'inactive'] as $s): ?>
                 <option value="<?= e($s) ?>" <?= $filter === $s ? 'selected' : '' ?>>
                     <?= ucfirst($s) ?>
@@ -636,7 +637,7 @@ admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned 
 <div class="two-cols wide-left">
     <!-- Left Column: Create / Edit Club Details & Dynamic Links -->
     <section class="panel" id="club-form">
-        <h2><?= $selected ? 'Edit club' : 'Create club' ?></h2>
+        <h2><?= $selected ? 'Edit Club' : 'Create Club' ?></h2>
         <p class="small"><?= $selected ? 'Selected: ' . e($selected['club_name']) : 'Add a new campus club.' ?></p>
 
         <form method="post" enctype="multipart/form-data">
@@ -711,7 +712,7 @@ admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned 
             </div>
 
             <div class="form-buttons">
-                <button class="btn btn-green" type="submit">Save club details</button>
+                <button class="btn btn-green" type="submit">Save Club Details</button>
             </div>
         </form>
     </section>
@@ -727,9 +728,9 @@ admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned 
                 <input type="hidden" name="club_id" value="<?= (int) $selected['club_id'] ?>">
 
                 <div class="field">
-                    <label>President *</label>
-                    <select name="president_id" required>
-                        <option value="">Select President</option>
+                    <label>President</label>
+                    <select name="president_id">
+                        <option value="">Not assigned</option>
                         <?php foreach ($verifiedUsers as $user): ?>
                             <option value="<?= (int) $user['user_id'] ?>" <?= $currentPresident === (int) $user['user_id'] ? 'selected' : '' ?>>
                                 <?= e($user['first_name'] . ' ' . $user['last_name'] . ' (' . $user['email'] . ')') ?>
@@ -739,7 +740,7 @@ admin_header('Clubs & leadership', 'Manage campus clubs, societies and assigned 
                 </div>
 
                 <div class="field">
-                    <label>Vice President (optional)</label>
+                    <label>Vice President</label>
                     <select name="vice_id">
                         <option value="">Not assigned</option>
                         <?php foreach ($verifiedUsers as $user): ?>

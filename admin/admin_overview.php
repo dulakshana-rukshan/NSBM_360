@@ -25,7 +25,7 @@ function esc($value) {
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($adminId < 1) {
     http_response_code(401);
-    include __DIR__ . '/../admin_access_denied.php';
+    include __DIR__ . '/../admin/admin_access_denied.php';
     exit;
 }
 
@@ -122,7 +122,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Campus platform overview | NSBM 360 Admin</title>
+    <title>Campus Platform Overview | NSBM 360 Admin</title>
     <!-- Stylesheets -->
     <link rel="stylesheet" href="../assets/css/admin_overview.css">
     <link rel="stylesheet" href="../assets/css/style.css">
@@ -156,9 +156,9 @@ include '../includes/navbar.php';
         <div class="sidebar-bottom">
             <p>Manage platform accounts, club assignments and official campus content.</p>
             <a href="../index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
-            <form method="post">
+            <form method="post" action="/NSBM_360/auth/logout.php">
                 <button type="submit" class="signout" name="action" value="logout">
-                    <a href="index.php"><i class="fa-solid fa-right-from-bracket"></i> Sign out</a>
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign out
                 </button>
             </form>
         </div>
@@ -166,11 +166,11 @@ include '../includes/navbar.php';
 
     <!-- MAIN CONTENT AREA -->
     <main class="main-content">
-        <div class="breadcrumbs">Home / Administration / Campus platform overview</div>
+        <div class="breadcrumbs">Home / Administration / Campus Platform Overview</div>
         
         <div class="page-heading">
             <div>
-                <h1>Campus platform overview</h1>
+                <h1>Campus Platform Overview</h1>
                 <p>Welcome back, keep the community connected and the platform running smoothly.</p>
             </div>
         </div>
@@ -180,32 +180,32 @@ include '../includes/navbar.php';
         <?php endif; ?>
 
         <div class="toolbar overview-date">
-            <span>Database overview</span>
+            <span>Database Overview</span>
             <span><?= date('d F Y') ?> · Last 30 days where available</span>
         </div>
 
         <!-- STAT CARDS GRID -->
         <div class="stat-grid">
             <div class="stat-card">
-                <div class="stat-title">Registered users <span><i class="fa-solid fa-users"></i></span></div>
+                <div class="stat-title">Registered Users <span><i class="fa-solid fa-users"></i></span></div>
                 <div class="stat-number"><?= number_format($totalUsers) ?></div>
                 <div class="stat-foot">+<?= $newUsers ?> registered in 30 days</div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-title">Active clubs <span><i class="fa-solid fa-people-group"></i></span></div>
+                <div class="stat-title">Active Clubs <span><i class="fa-solid fa-people-group"></i></span></div>
                 <div class="stat-number"><?= number_format($activeClubs) ?></div>
                 <div class="stat-foot">Active community spaces</div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-title">Published posts <span><i class="fa-solid fa-newspaper"></i></span></div>
+                <div class="stat-title">Published Posts <span><i class="fa-solid fa-newspaper"></i></span></div>
                 <div class="stat-number"><?= number_format($publishedPosts) ?></div>
                 <div class="stat-foot">+<?= $newPosts ?> published in 30 days</div>
             </div>
             
             <div class="stat-card">
-                <div class="stat-title">Pending requests <span><i class="fa-solid fa-clock-rotate-left"></i></span></div>
+                <div class="stat-title">Pending Requests <span><i class="fa-solid fa-clock-rotate-left"></i></span></div>
                 <div class="stat-number"><?= number_format($pendingCount) ?></div>
                 <div class="stat-foot">Awaiting administrator review</div>
             </div>
@@ -213,7 +213,7 @@ include '../includes/navbar.php';
 
         <!-- PENDING ROLE REQUESTS TABLE -->
         <section class="panel">
-            <h2>Pending role requests</h2>
+            <h2>Pending Role Requests</h2>
             <p class="small">Verify committee appointments before approving publishing access.</p>
             
             <div class="table-scroll">
@@ -249,14 +249,14 @@ include '../includes/navbar.php';
                     </tbody>
                 </table>
             </div>
-            <p class="manage-link"><a href="admin_users_role_requests.php">Manage users & role requests →</a></p>
+            <p class="manage-link"><a href="admin_users_role_requests.php">Manage Users & Role Requests →</a></p>
         </section>
 
         <!-- TWO COLUMNS SECTION (CHARTS & ACTIVITY) -->
         <div class="two-cols">
             <!-- Publishing Activity Chart -->
             <section class="panel">
-                <h2>Publishing activity</h2>
+                <h2>Publishing Activity</h2>
                 <p class="small">Published posts with publication dates · Last 7 days</p>
                 
                 <div class="bar-chart" role="img" aria-label="Posts published during the past seven days">
@@ -275,7 +275,7 @@ include '../includes/navbar.php';
 
             <!-- Recent Activity Feed -->
             <section class="panel">
-                <h2>Recent activity</h2>
+                <h2>Recent Activity</h2>
                 <p class="small">Recent publications and requests</p>
                 
                 <?php if (!empty($activity)): ?>
@@ -293,27 +293,27 @@ include '../includes/navbar.php';
 
         <!-- MANAGEMENT SHORTCUTS -->
         <section class="panel">
-            <h2>Management shortcuts</h2>
+            <h2>Management Shortcuts</h2>
             <div class="shortcut-grid">
                 <a class="shortcut" href="admin_users_role_requests.php">
-                    <strong>Users & requests</strong>
-                    <span>Review access and accounts</span>
-                    <b>Manage users →</b>
+                    <strong>Users & Requests</strong>
+                    <span>Review Access And Accounts</span>
+                    <b>Manage Users →</b>
                 </a>
                 <a class="shortcut" href="admin_clubs.php">
-                    <strong>Clubs & leadership</strong>
-                    <span>Assign Presidents and VPs</span>
-                    <b>Manage clubs →</b>
+                    <strong>Clubs & Leadership</strong>
+                    <span>Assign Presidents And VPs</span>
+                    <b>Manage Clubs →</b>
                 </a>
                 <a class="shortcut" href="admin_officialnews.php">
-                    <strong>Official news</strong>
-                    <span>Publish university updates</span>
-                    <b>Manage news →</b>
+                    <strong>Official News</strong>
+                    <span>Publish University Updates</span>
+                    <b>Manage News →</b>
                 </a>
                 <a class="shortcut" href="admin_announcements.php">
                     <strong>Announcements</strong>
-                    <span>Keep campus informed</span>
-                    <b>Manage notices →</b>
+                    <span>Keep Campus Informed</span>
+                    <b>Manage Notices →</b>
                 </a>
             </div>
         </section>

@@ -15,7 +15,7 @@ session_start();
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($adminId < 1) {
     http_response_code(401);
-    include __DIR__ . '/../admin_access_denied.php';
+    include __DIR__ . '/../admin/admin_access_denied.php';
     exit;
 }
 
@@ -203,9 +203,8 @@ include __DIR__ . '/../includes/navbar.php';
 
         <div class="sidebar-bottom">
             <p>Manage platform accounts, club assignments and official campus content.</p>
-            <a href="index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
-            <form method="post">
-                <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+            <a href="../index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
+            <form method="post" action="/NSBM_360/auth/logout.php">
                 <button type="submit" class="signout" name="action" value="logout">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign out
                 </button>
@@ -243,10 +242,14 @@ function admin_footer(): void
 <?php
 }
 
-// Fetch faculties dynamically from the database table with a fallback if empty
+// Fetch faculties dynamically from the database table (excluding any general/all faculties row if present)
 $facultiesFromDb = rows($pdo, "SELECT faculty_id, faculty_name FROM faculties ORDER BY faculty_id ASC");
 $facultiesMap = [];
 foreach ($facultiesFromDb as $fac) {
+    // If your database contains a general faculty record, skip mapping it here so it's strictly handled via NULL
+    if (stripos($fac['faculty_name'], 'General') !== false || stripos($fac['faculty_name'], 'All Faculties') !== false) {
+        continue;
+    }
     $facultiesMap[(int) $fac['faculty_id']] = $fac['faculty_name'];
 }
 
@@ -256,8 +259,7 @@ if (empty($facultiesMap)) {
         2 => 'Faculty of Engineering',
         3 => 'Faculty of Business',
         4 => 'Faculty of Science',
-        5 => 'Faculty of Post Graduates',
-        6 => 'General / All Faculties'
+        5 => 'Faculty of Post Graduates'
     ];
 }
 
@@ -275,7 +277,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             $title       = trim($_POST['title'] ?? '');
             $content     = trim($_POST['content'] ?? '');
             $status      = $_POST['submit_status'] ?? $_POST['status'] ?? 'draft';
-            $facultyId   = !empty($_POST['faculty_id']) ? (int) $_POST['faculty_id'] : null;
+            
+            // If faculty_id is empty or explicitly set to 'null', store as database NULL
+            $facultyId   = (!empty($_POST['faculty_id']) && $_POST['faculty_id'] !== 'null') ? (int) $_POST['faculty_id'] : null;
+            
             $isImportant = isset($_POST['is_important']) ? 1 : 0;
             
             $expiryInput = trim($_POST['expires_at'] ?? '');
@@ -441,7 +446,7 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
 
 <!-- Top Create Announcement Action -->
 <div class="page-actions">
-    <a class="btn btn-green" href="admin_announcements.php?new=1#announcement-form">＋ Create announcement</a>
+    <a class="btn btn-green" href="admin_announcements.php?new=1#announcement-form">＋ Create Announcement</a>
 </div>
 
 <!-- Status / Error Messages -->
@@ -466,14 +471,14 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
 <!-- Search & Filter Form -->
 <form class="panel filters" method="get">
     <div class="field field-grow">
-        <label>Search announcements</label>
+        <label>Search Announcements</label>
         <input name="search" placeholder="Search announcement title or content" value="<?= e($search) ?>">
     </div>
 
     <div class="field field-select">
         <label>Status</label>
         <select name="status">
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             <?php foreach (['published', 'draft', 'archived', 'expired'] as $s): ?>
                 <option value="<?= e($s) ?>" <?= $filter === $s ? 'selected' : '' ?>>
                     <?= ucfirst($s) ?>
@@ -576,7 +581,7 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
             <?php endif; ?>
         </h2>
         <p class="small">
-            By <?= e($selected['author']) ?> · Faculty: <?= e($selected['faculty_name'] ?? 'General / All Faculties') ?> · Published: <?= e(display_date($selected['published_at'] ?? null)) ?>
+            By <?= e($selected['author']) ?> <br> Faculty: <?= e($selected['faculty_name'] ?? 'General / All Faculties') ?> <br> Published: <?= e(display_date($selected['published_at'] ?? null)) ?>
         </p>
         <p><?= nl2br(e($selected['content'])) ?></p>
         <?php if ($selected['image']): ?>
@@ -589,7 +594,7 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
 <div class="two-cols wide-left">
     <!-- Left Column: Create / Edit Form -->
     <section class="panel" id="announcement-form">
-        <h2><?= $selected ? 'Edit announcement' : 'Create announcement' ?></h2>
+        <h2><?= $selected ? 'Edit Announcement' : 'Create Announcement' ?></h2>
         <p class="small"><?= $selected ? 'Selected: ' . e($selected['title']) : 'Write a new campus announcement.' ?></p>
 
         <form method="post" enctype="multipart/form-data">
@@ -602,14 +607,18 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
                 <input name="title" required maxlength="255" value="<?= e($selected['title'] ?? '') ?>">
             </div>
             
-            <!-- Faculty Radio Buttons List -->
+            <!-- Faculty Radio Buttons List (Includes General / All Faculties storing NULL) -->
             <div class="field">
                 <label>Faculty *</label>
                 <div class="announcement-faculty-group">
                     <?php 
-                    $currentFaculty = (int) ($selected['faculty_id'] ?? 0);
-                    foreach ($facultiesMap as $fId => $fName): 
+                    $currentFaculty = isset($selected['faculty_id']) && $selected['faculty_id'] !== null ? (int) $selected['faculty_id'] : null;
                     ?>
+                    <label class="announcement-faculty-label">
+                        <input type="radio" name="faculty_id" value="null" <?= $currentFaculty === null ? 'checked' : '' ?>> 
+                        General / All Faculties
+                    </label>
+                    <?php foreach ($facultiesMap as $fId => $fName): ?>
                         <label class="announcement-faculty-label">
                             <input type="radio" name="faculty_id" value="<?= $fId ?>" <?= $currentFaculty === $fId ? 'checked' : '' ?>> 
                             <?= e($fName) ?>
@@ -657,16 +666,16 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
             </div>
 
             <div class="form-buttons">
-                <button class="btn btn-green" name="submit_status" value="published">Publish announcement</button>
-                <button class="btn" name="submit_status" value="draft">Save draft</button>
-                <button class="btn" type="submit">Save selected status</button>
+                <button class="btn btn-green" name="submit_status" value="published">Publish Announcement</button>
+                <button class="btn" name="submit_status" value="draft">Save Draft</button>
+                <button class="btn" type="submit">Save Selected Status</button>
             </div>
         </form>
     </section>
 
     <!-- Right Column: Publication Settings & Info Sidebar -->
     <aside class="panel">
-        <h2>Publication settings</h2>
+        <h2>Publication Settings</h2>
         <?php if ($selected): ?>
             <p>
                 <span class="badge <?= $selected['status'] === 'published' ? 'green' : ($selected['status'] === 'expired' ? 'yellow' : ($selected['status'] === 'archived' ? 'blue' : 'gray')) ?>">
@@ -679,11 +688,11 @@ admin_header('Announcements', 'Timely campus notices, published by administrator
                 Published: <?= e(display_date($selected['published_at'] ?? null)) ?><br>
                 Expires: <?= e(display_date($selected['expires_at'])) ?>
             </p>
-            <p><a href="?view=<?= (int) $selected['announcement_id'] ?>#announcement-preview">Preview announcement →</a></p>
+            <p><a href="?view=<?= (int) $selected['announcement_id'] ?>#announcement-preview">Preview Announcement →</a></p>
             <form method="post" onsubmit="return confirm('Permanently delete this announcement?');">
                 <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
                 <input type="hidden" name="announcement_id" value="<?= (int) $selected['announcement_id'] ?>">
-                <button class="btn btn-red" name="action" value="delete_announcement">Delete announcement</button>
+                <button class="btn btn-red" name="action" value="delete_announcement">Delete Announcement</button>
             </form>
         <?php else: ?>
             <p class="small">Save an announcement to see its publication details.</p>

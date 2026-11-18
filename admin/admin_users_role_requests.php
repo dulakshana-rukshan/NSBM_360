@@ -14,7 +14,7 @@ session_start();
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($adminId < 1) {
     http_response_code(401);
-    include __DIR__ . '/../admin_access_denied.php';
+    include __DIR__ . '/../admin/admin_access_denied.php';
     exit;
 }
 
@@ -202,9 +202,8 @@ include __DIR__ . '/../includes/navbar.php';
 
         <div class="sidebar-bottom">
             <p>Manage platform accounts, club assignments and official campus content.</p>
-            <a href="index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
-            <form method="post">
-                <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+            <a href="../index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
+            <form method="post" action="/NSBM_360/auth/logout.php">
                 <button type="submit" class="signout" name="action" value="logout">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign out
                 </button>
@@ -340,7 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             try {
                 $request = rows(
                     $pdo,
-                    'SELECT rr.*, u.email_verified, u.role AS account_role 
+                    'SELECT rr.*, u.role AS account_role 
                      FROM role_requests rr 
                      JOIN users u ON u.user_id = rr.user_id 
                      WHERE rr.request_id = ? FOR UPDATE',
@@ -352,10 +351,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
                 }
 
                 if ($action === 'approve_request') {
-                    if (!$request['email_verified'] || $request['account_role'] !== 'user') {
-                        throw new Exception('Verify the student email before approving a leadership role.');
-                    }
-
                     $clubId        = (int) $request['club_id'];
                     $userId        = (int) $request['user_id'];
                     $requestedRole = $request['requested_role'];
@@ -487,12 +482,12 @@ foreach ($pending as $request) {
 }
 
 // Render page header
-admin_header('Users & role requests', 'Manage accounts, review leadership requests and keep club access accurate.', 'users');
+admin_header('Users & Role Requests', 'Manage accounts, review leadership requests and keep club access accurate.', 'users');
 ?>
 
 <!-- Top Add User Button -->
 <div class="page-actions">
-    <a class="btn btn-green" href="admin_users_role_requests.php?new=1#user-form">＋ Add user</a>
+    <a class="btn btn-green" href="admin_users_role_requests.php?new=1#user-form">＋ Add User</a>
 </div>
 
 <!-- Status / Error Messages -->
@@ -506,7 +501,7 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
 
 <!-- PENDING ROLE REQUESTS PANEL -->
 <section class="panel">
-    <h2>Pending role requests · <?= count($pending) ?></h2>
+    <h2>Pending Role Requests · <?= count($pending) ?></h2>
     <p class="small">Approval grants leadership for the requested club. Rejection leaves the user's account role unchanged.</p>
 
     <div class="table-scroll">
@@ -556,8 +551,8 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
     </div>
 
     <div class="info">
-        <strong>Verify before granting access</strong><br>
-        Approve only email-verified student accounts after checking their club appointment. Approving replaces an existing holder of the same position.
+        <strong>Review before granting access</strong><br>
+        Approving replaces an existing holder of the same position.
     </div>
 </section>
 
@@ -569,8 +564,7 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
             <strong><?= e($review['first_name'] . ' ' . $review['last_name']) ?></strong> · <?= e($review['student_id']) ?><br>
             <?= e($review['email']) ?><br>
             Club: <?= e($review['club_name']) ?><br>
-            Position: <?= e(str_replace('_', ' ', $review['requested_role'])) ?><br>
-            Email verification: <?= $review['email_verified'] ? 'Verified' : 'Not verified' ?>
+            Position: <?= e(str_replace('_', ' ', $review['requested_role'])) ?>
         </p>
     </section>
 <?php endif; ?>
@@ -585,14 +579,14 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
 <!-- SEARCH & FILTER FORM -->
 <form method="get" class="panel filters">
     <div class="field field-grow">
-        <label>Search user</label>
+        <label>Search User</label>
         <input name="search" placeholder="Search by name, university email or student ID" value="<?= e($search) ?>">
     </div>
 
     <div class="field field-select">
         <label>Role</label>
         <select name="role">
-            <option value="">All roles</option>
+            <option value="">All Roles</option>
             <?php
             $roleOptions = [
                 'admin'          => 'Administrator',
@@ -612,7 +606,7 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
     <div class="field field-select">
         <label>Email</label>
         <select name="verified">
-            <option value="">All accounts</option>
+            <option value="">All Accounts</option>
             <option value="1" <?= $verifyFilter === '1' ? 'selected' : '' ?>>Verified</option>
             <option value="0" <?= $verifyFilter === '0' ? 'selected' : '' ?>>Not verified</option>
         </select>
@@ -695,7 +689,7 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
 
 <!-- ADD / EDIT USER FORM PANEL -->
 <section class="panel user-edit" id="user-form">
-    <h2><?= $selected ? 'Edit user account' : 'Add user account' ?></h2>
+    <h2><?= $selected ? 'Edit User Account' : 'Add User Account' ?></h2>
     <p class="small">Student / Reader and Administrator are account roles. Club President and Vice President are assigned separately.</p>
 
     <form method="post">
@@ -741,18 +735,11 @@ admin_header('Users & role requests', 'Manage accounts, review leadership reques
                 </select>
             </div>
 
-            <div class="field">
-                <label>Email verification</label>
-                <label class="check-label">
-                    <input type="checkbox" name="email_verified" value="1" <?= !empty($selected['email_verified']) ? 'checked' : '' ?>>
-                    Email is verified
-                </label>
-            </div>
         </div>
 
         <div class="form-buttons">
             <button class="btn btn-green" name="action" value="<?= $selected ? 'edit_user' : 'add_user' ?>">
-                <?= $selected ? 'Save changes' : 'Add user' ?>
+                <?= $selected ? 'Save changes' : 'Add User' ?>
             </button>
             <a class="btn" href="admin_users_role_requests.php">Cancel</a>
         </div>
