@@ -15,7 +15,7 @@ session_start();
 $adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($adminId < 1) {
     http_response_code(401);
-    include __DIR__ . '/../admin_access_denied.php';
+    include __DIR__ . '/../admin/admin_access_denied.php';
     exit;
 }
 
@@ -434,8 +434,12 @@ function admin_header(string $title, string $subtitle, string $active): void {
         </nav>
         <div class="sidebar-bottom">
             <p>Manage platform accounts, club assignments and official campus content.</p>
-            <a href="index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
-            <form method="post"><input type="hidden" name="csrf" value="<?= e($csrf) ?>"><button type="submit" class="signout" name="action" value="logout"><i class="fa-solid fa-right-from-bracket"></i>Sign out</button></form>
+            <a href="../index.php"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public site</a>
+            <form method="post" action="/NSBM_360/auth/logout.php">
+                <button type="submit" class="signout" name="action" value="logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign out
+                </button>
+            </form>
         </div>
     </aside>
     <main class="main-content">
@@ -727,9 +731,9 @@ admin_header('Official News', 'Manage campus news, events, sports, academic noti
             </div>
 
             <div class="form-buttons">
-                <button class="btn btn-green" name="submit_status" value="published">Publish post</button>
-                <button class="btn" name="submit_status" value="draft">Save draft</button>
-                <button class="btn" type="submit">Save selected status</button>
+                <button class="btn btn-green" name="submit_status" value="published">Publish Post</button>
+                <button class="btn" name="submit_status" value="draft">Save Draft</button>
+                <button class="btn" type="submit">Save Selected Status</button>
             </div>
         </form>
 
@@ -757,7 +761,7 @@ admin_header('Official News', 'Manage campus news, events, sports, academic noti
                 Published: <?= e(display_date($selectedPost['published_at'] ?? null)) ?><br>
                 Updated: <?= e(display_date($selectedPost['updated_at'] ?? null)) ?>
             </p>
-            <p><a href="?view=<?= (int)$selectedPost['post_id'] ?>#post-preview">Preview post →</a></p>
+            <p><a href="?view=<?= (int)$selectedPost['post_id'] ?>#post-preview">Preview Post →</a></p>
         <?php endif; ?>
         <p class="small">Administrators can directly publish posts across any category, faculty, or club without requiring club president approval.</p>
         <div class="info"><strong>Events Note</strong><br>Selecting the 'Events' category automatically reveals the venue and date/time fields required for event publication.</div>
