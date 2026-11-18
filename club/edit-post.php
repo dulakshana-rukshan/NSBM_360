@@ -3,9 +3,7 @@
 
 require_once __DIR__ . '/president_auth.php';
 
-// ------------------------------------
-// 1. GET POST ID
-// ------------------------------------
+// GET POST ID
 
 $postId = filter_var(
     $_GET['id'] ?? '',
@@ -22,10 +20,7 @@ if ($postId === false || $postId < 1) {
 }
 
 
-// ------------------------------------
-// 2. GET CATEGORIES, SUBCATEGORIES,
-//    FACULTIES AND CLUB SPORTS
-// ------------------------------------
+// LOAD CATEGORIES, SUBCATEGORIES, FACULTIES AND SPORTS
 
 $isSportsClub = (
     strtolower(trim((string) $clubType)) === 'sports'
@@ -35,12 +30,9 @@ $allowedCategoryNames = $isSportsClub
     ? ['sports', 'events']
     : ['academics', 'events', 'news'];
 
-
-// Main categories
 $categoriesStmt = $pdo->query(
     "SELECT category_id, category_name
      FROM categories
-     WHERE parent_category_id IS NULL
      ORDER BY category_name"
 );
 
@@ -64,7 +56,6 @@ $allowedCategoryIds = array_map(
 );
 
 
-// Subcategories
 $subcategoriesStmt = $pdo->query(
     "SELECT subcategory_id, category_id, subcategory_name
      FROM subcategories
@@ -107,7 +98,6 @@ $subcategories = array_values(
 );
 
 
-// Faculties
 $facultiesStmt = $pdo->query(
     "SELECT faculty_id, faculty_name
      FROM faculties
@@ -117,7 +107,6 @@ $facultiesStmt = $pdo->query(
 $faculties = $facultiesStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// Sports assigned to this club
 $sportsStmt = $pdo->prepare(
     "SELECT s.sport_id, s.sport_name
      FROM club_sports cs
@@ -135,9 +124,7 @@ $sportsStmt->execute([
 $clubSports = $sportsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-// ------------------------------------
-// 3. GET SELECTED POST
-// ------------------------------------
+// GET SELECTED POST
 
 $postStmt = $pdo->prepare(
     "SELECT
@@ -167,9 +154,7 @@ if (!$post) {
 }
 
 
-// ------------------------------------
-// 4. GET EXISTING EVENT DETAILS
-// ------------------------------------
+// GET EVENT DETAILS
 
 $event = null;
 
@@ -190,9 +175,7 @@ if ($post) {
 }
 
 
-// ------------------------------------
-// 5. PREPARE EXISTING EVENT DATETIME
-// ------------------------------------
+// PREPARE EXISTING EVENT DATETIME
 
 $eventStartValue = '';
 $eventEndValue = '';
@@ -232,9 +215,7 @@ if ($event) {
 }
 
 
-// ------------------------------------
-// 6. GET EXISTING ADDITIONAL IMAGES
-// ------------------------------------
+// GET EXISTING ADDITIONAL IMAGES
 
 $additionalImages = [];
 
@@ -255,9 +236,7 @@ if ($post) {
 }
 
 
-// ------------------------------------
-// 7. GET SELECTED FACULTIES
-// ------------------------------------
+// GET SELECTED FACULTIES
 
 $selectedFacultyIds = [];
 
@@ -283,9 +262,7 @@ if ($post) {
 $errors = [];
 
 
-// ------------------------------------
-// 8. HELPER: IMAGE URL
-// ------------------------------------
+// IMAGE URL HELPER
 
 function edit_post_image_url($path)
 {
@@ -297,9 +274,7 @@ function edit_post_image_url($path)
 }
 
 
-// ------------------------------------
-// 9. PROCESS FORM SUBMISSION
-// ------------------------------------
+// PROCESS FORM SUBMISSION
 
 if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -325,7 +300,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?? 'draft';
 
 
-    // Event fields
     $eventStartAt = trim($_POST['event_start_at'] ?? '');
     $eventEndAt = trim($_POST['event_end_at'] ?? '');
     $venue = trim($_POST['venue'] ?? '');
@@ -343,7 +317,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $eventEndValue = $eventEndAt;
 
 
-    // Faculty IDs
     $facultyIds = $_POST['faculty_ids'] ?? [];
 
     if (!is_array($facultyIds)) {
@@ -358,9 +331,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // ------------------------------------
-    // 10. VALIDATION
-    // ------------------------------------
+    // VALIDATION
 
     if (!csrf_is_valid()) {
         $errors[] = 'The form session expired. Refresh and try again.';
@@ -382,9 +353,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
     // CATEGORY VALIDATION
-    // ------------------------------------
 
     $categoryName = '';
 
@@ -395,12 +364,11 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
 
         $categoryCheck = $pdo->prepare(
-            "SELECT category_name
-             FROM categories
-             WHERE category_id = :category_id
-               AND parent_category_id IS NULL
-             LIMIT 1"
-        );
+        "SELECT category_name
+        FROM categories
+        WHERE category_id = :category_id
+        LIMIT 1"
+     );
 
         $categoryCheck->execute([
             'category_id' => $categoryId
@@ -427,9 +395,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
     // SUBCATEGORY VALIDATION
-    // ------------------------------------
 
     $subcategoryName = '';
 
@@ -470,18 +436,14 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
     // STATUS VALIDATION
-    // ------------------------------------
 
     if (!in_array($status, ['draft', 'published', 'archived'], true)) {
         $errors[] = 'Choose a valid post status.';
     }
 
 
-    // ------------------------------------
     // CATEGORY TYPE CHECKS
-    // ------------------------------------
 
     $isSportsCategory = (
         strtolower(trim($categoryName)) === 'sports'
@@ -501,9 +463,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // ------------------------------------
     // SPORTS VALIDATION
-    // ------------------------------------
 
     if ($requiresSport) {
 
@@ -533,9 +493,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
     // EVENT VALIDATION
-    // ------------------------------------
 
     if ($isEventCategory) {
 
@@ -623,9 +581,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // VALIDATE FACULTY IDS
-    // ------------------------------------
+    // FACULTY VALIDATION
 
     if (!empty($facultyIds)) {
 
@@ -650,10 +606,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // VALIDATE IMAGE REMOVALS
-    // AND MAXIMUM TOTAL IMAGE COUNT
-    // ------------------------------------
+    // IMAGE REMOVAL AND IMAGE COUNT VALIDATION
 
     $removeImageIds = $_POST['remove_image_ids'] ?? [];
 
@@ -669,7 +622,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // Get existing image IDs for this post.
     $existingImagesStmt = $pdo->prepare(
         "SELECT image_id
          FROM post_images
@@ -686,7 +638,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 
-    // Ensure selected removal IDs belong to this post.
     foreach ($removeImageIds as $removeId) {
 
         if (!in_array($removeId, $existingImageIds, true)) {
@@ -696,13 +647,11 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // Count existing images that will remain.
     $remainingExistingCount = count(
         array_diff($existingImageIds, $removeImageIds)
     );
 
 
-    // Count newly selected files.
     $newAdditionalImageCount = 0;
 
     if (
@@ -719,7 +668,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // Maximum 5 images total.
     if (
         $remainingExistingCount + $newAdditionalImageCount > 5
     ) {
@@ -728,9 +676,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
-    // 11. UPDATE DATABASE
-    // ------------------------------------
+    // UPDATE DATABASE
 
     if (empty($errors)) {
 
@@ -740,10 +686,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $oldAdditionalImagePathsToDelete = [];
 
         try {
-
-            // --------------------------------
-            // UPLOAD NEW COVER IMAGE
-            // --------------------------------
 
             if (
                 isset($_FILES['cover_image']) &&
@@ -759,10 +701,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $imageToSave = $newImagePath ?? $post['cover_image'];
 
-
-            // --------------------------------
-            // UPLOAD ADDITIONAL IMAGES
-            // --------------------------------
 
             if (
                 isset($_FILES['additional_images']) &&
@@ -804,10 +742,6 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
-            // PUBLISHED DATE
-            // --------------------------------
-
             $publishedAt = $post['published_at'];
 
             if ($status === 'published' && !$publishedAt) {
@@ -820,16 +754,8 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
-            // BEGIN TRANSACTION
-            // --------------------------------
-
             $pdo->beginTransaction();
 
-
-            // --------------------------------
-            // UPDATE POSTS TABLE
-            // --------------------------------
 
             $updatePost = $pdo->prepare(
                 "UPDATE posts
@@ -861,9 +787,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
 
-            // --------------------------------
-            // UPDATE EVENTS TABLE
-            // --------------------------------
+            // UPDATE EVENTS
 
             if ($isEventCategory) {
 
@@ -985,9 +909,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
             // UPDATE POST FACULTIES
-            // --------------------------------
 
             $deleteFaculties = $pdo->prepare(
                 "DELETE FROM post_faculties
@@ -1021,9 +943,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
             // REMOVE SELECTED ADDITIONAL IMAGES
-            // --------------------------------
 
             if (!empty($removeImageIds)) {
 
@@ -1068,9 +988,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
             // INSERT NEW ADDITIONAL IMAGES
-            // --------------------------------
 
             if (!empty($newAdditionalImagePaths)) {
 
@@ -1115,16 +1033,8 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
 
-            // --------------------------------
-            // COMMIT DATABASE CHANGES
-            // --------------------------------
-
             $pdo->commit();
 
-
-            // --------------------------------
-            // DELETE OLD FILES AFTER COMMIT
-            // --------------------------------
 
             if ($newImagePath && !empty($post['cover_image'])) {
                 delete_post_image($post['cover_image']);
@@ -1171,9 +1081,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
-    // ------------------------------------
     // PRESERVE FORM VALUES
-    // ------------------------------------
 
     $post['title'] = $title;
     $post['summary'] = $summary;
@@ -1210,9 +1118,7 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 
-// ------------------------------------
-// 12. PAGE SETTINGS
-// ------------------------------------
+// PAGE SETTINGS
 
 $pageTitle = 'Edit Post | NEWS 360';
 $pageCSS = '/NSBM_360/assets/css/president.css';
