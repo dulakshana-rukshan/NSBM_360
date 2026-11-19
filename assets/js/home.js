@@ -249,7 +249,12 @@ document.addEventListener("DOMContentLoaded", function () {
       title.textContent = activity.title;
       const category = document.createElement("span");
       category.className = "tooltip-category";
-      category.textContent = activity.type;
+      category.textContent =
+        activity.event_status === "completed"
+          ? "COMPLETED"
+          : activity.event_status === "live"
+            ? "LIVE NOW"
+            : "UPCOMING";
       const details = document.createElement("div");
       details.textContent = `${activity.time} · ${activity.location}`;
       item.appendChild(title);
@@ -344,20 +349,35 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     upcomingEventsList.replaceChildren(fragment);
   }
+
   function renderFeatured(items) {
     if (!featuredEventSlide) return;
+
     const fragment = document.createDocumentFragment();
-    const item = items[0];
-    fragment.appendChild(
-      eventElement(
-        "span",
-        "activity-status",
-        item ? "UPCOMING EVENT" : "CAMPUS UPDATES",
-      ),
-    );
+
+    // Prioritize a live event, otherwise show the next upcoming event.
+    const item =
+      items.find((event) => event.event_status === "live") ||
+      items.find((event) => event.event_status === "upcoming");
+
+    let statusText = "CAMPUS UPDATES";
+
+    if (item) {
+      statusText = item.event_status === "live" ? "LIVE NOW" : "UPCOMING EVENT";
+    }
+
+    const status = eventElement("span", "activity-status", statusText);
+
+    if (item?.event_status === "live") {
+      status.classList.add("live");
+    }
+
+    fragment.appendChild(status);
+
     fragment.appendChild(
       eventElement("h3", "", item ? item.title : "No Upcoming Events"),
     );
+
     fragment.appendChild(
       eventElement(
         "p",
@@ -367,22 +387,31 @@ document.addEventListener("DOMContentLoaded", function () {
           : "Check back soon for new campus activities.",
       ),
     );
+
     if (item) {
       for (const [icon, value] of [
         ["bi bi-calendar-event", item.date_label + " · " + item.time_label],
         ["bi bi-geo-alt", item.venue],
       ]) {
         const detail = eventElement("div", "activity-detail");
+
         detail.append(eventElement("i", icon), eventElement("span", "", value));
+
         fragment.appendChild(detail);
       }
     }
+
     const link = eventElement("a", "activity-view-link", "Explore Events ");
+
     link.href = "/NSBM_360/pages/events.php";
+
     link.appendChild(eventElement("i", "bi bi-arrow-right"));
+
     fragment.appendChild(link);
+
     featuredEventSlide.replaceChildren(fragment);
   }
+
   let lastEventSignature = null;
   let eventsLoading = false;
   async function refreshEvents() {
@@ -431,7 +460,14 @@ document.addEventListener("DOMContentLoaded", function () {
     dayActivities.forEach((activity, index) => {
       const item = document.createElement("div");
       const title = document.createElement("strong");
-      title.textContent = `${activity.title} (${activity.type})`;
+      const statusLabel =
+        activity.event_status === "completed"
+          ? "COMPLETED"
+          : activity.event_status === "live"
+            ? "LIVE NOW"
+            : "UPCOMING";
+
+      title.textContent = `${activity.title} (${statusLabel})`;
       const details = document.createElement("div");
       details.textContent = `${activity.time} · ${activity.location}`;
       item.appendChild(title);

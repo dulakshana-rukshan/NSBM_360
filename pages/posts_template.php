@@ -45,10 +45,19 @@ if ($selectedSubcategory !== 'all' && is_numeric($selectedSubcategory)) {
     $params['subcat_id'] = $selectedSubcategory;
 }
 
-// Filter by specific faculty_id if selected
-if ($selectedFaculty !== 'all' && is_numeric($selectedFaculty)) {
-    $whereClauses[] = "posts.faculty_id = :faculty_id";
-    $params['faculty_id'] = $selectedFaculty;
+// Filter posts using multiple faculty relationships
+if ($selectedFaculty !== 'all' && ctype_digit((string)$selectedFaculty)) {
+
+    $whereClauses[] = "
+        EXISTS (
+            SELECT 1
+            FROM post_faculties pf
+            WHERE pf.post_id = posts.post_id
+              AND pf.faculty_id = :faculty_id
+        )
+    ";
+
+    $params['faculty_id'] = (int)$selectedFaculty;
 }
 
 if ($selectedMonth !== 'all' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
@@ -139,6 +148,35 @@ try {
 } catch (\PDOException $e) {
     $allMonths = [];
 }
+function post_image_url(?string $path): string
+{
+    $fallback = 'https://placehold.co/400x200?text=No+Image';
+
+    if (empty(trim($path ?? ''))) {
+        return $fallback;
+    }
+
+    $path = trim(str_replace('\\', '/', $path));
+
+    // Already a complete URL
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    // Remove leading ../ or ./
+    $path = preg_replace('#^(\.\./|\./)+#', '', $path);
+
+    // Already contains project root
+    if (str_starts_with($path, '/NSBM_360/')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, 'NSBM_360/')) {
+        return '/' . $path;
+    }
+
+    return '/NSBM_360/' . ltrim($path, '/');
+}
 
 // Helper function to render grid and pagination markup
 function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPages) {
@@ -155,7 +193,11 @@ function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPag
                 <div class="col">
                     <a href="news_details.php?id=<?= $post['post_id'] ?>" class="text-decoration-none h-100 d-block">
                         <div class="card h-100 card-hover-effect">
-                            <img src="<?= htmlspecialchars($post['cover_image'] ?? 'https://via.placeholder.com/400x200') ?>" class="card-img-top" alt="Cover Image">
+                            <img
+                                src="<?= htmlspecialchars(post_image_url($post['cover_image'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
+                                class="card-img-top"
+                                alt="Cover Image"
+                            >
                             <div class="card-body d-flex flex-column">
                                 <div class="mb-2">
                                     <span class="badge bg-primary px-2 py-1 rounded"><?= htmlspecialchars($post['category_name']) ?></span>

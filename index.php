@@ -29,21 +29,34 @@ function homeImageUrl(?string $path): string
 {
     $fallback = '/NSBM_360/assets/image/news-1.jpg';
 
-    if (!$path) {
+    if (empty($path)) {
         return $fallback;
     }
 
     $path = trim(str_replace('\\', '/', $path));
 
-    if (str_starts_with($path, '/NSBM_360/assets/image/')) {
+    // Full external image URL
+    if (preg_match('~^https?://~i', $path)) {
         return $path;
     }
 
-    if (str_starts_with($path, 'assets/image/')) {
-        return '/NSBM_360/' . $path;
+    // Already contains project URL
+    if (str_starts_with($path, '/NSBM_360/')) {
+        return $path;
     }
 
-    return $fallback;
+    // Remove leading ../ and ./
+    while (str_starts_with($path, '../')) {
+        $path = substr($path, 3);
+    }
+
+    while (str_starts_with($path, './')) {
+        $path = substr($path, 2);
+    }
+
+    $path = ltrim($path, '/');
+
+    return '/NSBM_360/' . $path;
 }
 
 function homeEscape(?string $value): string
@@ -83,6 +96,7 @@ $latestNews = $pdo->query("
 // UPCOMING EVENTS
 // =========================
 
+
 $upcomingEvents = $pdo->query("
     SELECT
         e.event_id,
@@ -100,7 +114,19 @@ $upcomingEvents = $pdo->query("
         COALESCE(
             e.start_at,
             TIMESTAMP(e.event_date, e.start_time)
-        ) AS event_start
+        ) AS event_start,
+        COALESCE(
+            e.end_at,
+            TIMESTAMP(e.event_date, e.end_time)
+        ) AS event_end,
+        CASE
+            WHEN COALESCE(
+                e.start_at,
+                TIMESTAMP(e.event_date, e.start_time)
+            ) <= NOW()
+            THEN 'live'
+            ELSE 'upcoming'
+        END AS event_status
     FROM events e
     JOIN posts p
         ON p.post_id = e.post_id
@@ -109,12 +135,22 @@ $upcomingEvents = $pdo->query("
     WHERE p.status = 'published'
       AND c.category_name = 'Events'
       AND COALESCE(
-          e.start_at,
-          TIMESTAMP(e.event_date, e.start_time)
+          e.end_at,
+          TIMESTAMP(e.event_date, e.end_time)
       ) > NOW()
-    ORDER BY event_start ASC
+    ORDER BY
+        CASE
+            WHEN COALESCE(
+                e.start_at,
+                TIMESTAMP(e.event_date, e.start_time)
+            ) <= NOW()
+            THEN 0
+            ELSE 1
+        END,
+        event_start ASC
     LIMIT 3
 ")->fetchAll(PDO::FETCH_ASSOC);
+
 
 // =========================
 // INTERACTIVE CALENDAR
@@ -568,9 +604,13 @@ include 'includes/navbar.php';
 
                         <?php $featuredEvent = $upcomingEvents[0]; ?>
 
+                        
                         <span class="activity-status">
-                            UPCOMING EVENT
+                            <?= $featuredEvent['event_status'] === 'live'
+                                ? 'LIVE NOW'
+                                : 'UPCOMING EVENT' ?>
                         </span>
+
 
                         <h3>
                             <?= homeEscape($featuredEvent['title']) ?>

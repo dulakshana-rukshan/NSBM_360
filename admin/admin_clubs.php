@@ -222,9 +222,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             $clubName    = trim($_POST['club_name'] ?? '');
             $description = trim($_POST['description'] ?? '');
             $status      = $_POST['status'] ?? 'active';
+            $clubType = $_POST['club_type'] ?? 'general';
+            $sportId  = (int) ($_POST['sport_id'] ?? 0);
 
-            if ($clubName === '' || !in_array($status, ['active', 'inactive'], true)) {
-                throw new Exception('Club name and a valid status are required.');
+            if (
+                $clubName === '' ||
+                !in_array($status, ['active', 'inactive'], true) ||
+                !in_array($clubType, ['general', 'sports'], true)
+            ) {
+                throw new Exception('Club name, type and a valid status are required.');
+            }
+
+            if ($clubType === 'sports') {
+                if ($sportId < 1) {
+                    throw new Exception('Please select a sport for the sports club.');
+                }
+
+                $sportExists = count_sql(
+                    $pdo,
+                    'SELECT COUNT(*) FROM sports WHERE sport_id = ? AND is_active = 1',
+                    [$sportId]
+                );
+
+                if ($sportExists === 0) {
+                    throw new Exception('Invalid or inactive sport selected.');
+                }
+            } else {
+                $sportId = 0;
             }
 
             $logoPath   = null;
@@ -236,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             }
 
             // Dedicated subfolders inside uploads/clubs/
-            $logoDir   = __DIR__ . '/../uploads/clubs/logo/';
+            $logoDir   = __DIR__ . '/../uploads/clubs/logos/';
             $bannerDir = __DIR__ . '/../uploads/clubs/banner/';
 
             if (!is_dir($logoDir)) {
@@ -257,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
 
                 $newFileName = 'logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $fileExtension;
                 if (move_uploaded_file($_FILES['logo']['tmp_name'], $logoDir . $newFileName)) {
-                    $logoPath = '../uploads/clubs/logo/' . $newFileName;
+                    $logoPath = '../uploads/clubs/logos/' . $newFileName;
                 } else {
                     throw new Exception('Failed to upload club logo.');
                 }
@@ -283,16 +307,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             if ($id > 0) {
                 run_sql(
                     $pdo,
-                    'UPDATE clubs SET club_name = ?, description = ?, logo = ?, banner = ?, status = ? WHERE club_id = ?',
-                    [$clubName, $description, $logoPath, $bannerPath, $status, $id]
+                    'UPDATE clubs
+                    SET club_name = ?, description = ?, logo = ?,
+                        banner = ?, club_type = ?, status = ?
+                    WHERE club_id = ?',
+                    [
+                        $clubName,
+                        $description,
+                        $logoPath,
+                        $bannerPath,
+                        $clubType,
+                        $status,
+                        $id
+                    ]
                 );
             } else {
                 run_sql(
                     $pdo,
-                    'INSERT INTO clubs (club_name, description, logo, banner, status) VALUES (?, ?, ?, ?, ?)',
-                    [$clubName, $description, $logoPath, $bannerPath, $status]
+                    'INSERT INTO clubs
+                    (club_name, description, logo, banner, club_type, status)
+                    VALUES (?, ?, ?, ?, ?, ?)',
+                    [
+                        $clubName,
+                        $description,
+                        $logoPath,
+                        $bannerPath,
+                        $clubType,
+                        $status
+                    ]
                 );
+
                 $id = (int) $pdo->lastInsertId();
+            }
+
+            // Remove any previous sport association
+            run_sql(
+                $pdo,
+                'DELETE FROM club_sports WHERE club_id = ?',
+                [$id]
+            );
+
+            // Link the selected sport only for sports clubs
+            if ($clubType === 'sports') {
+                run_sql(
+                    $pdo,
+                    'INSERT INTO club_sports (club_id, sport_id)
+                    VALUES (?, ?)',
+                    [$id, $sportId]
+                );
             }
 
             // --- HANDLE CLUB LINKS INSERTION / UPDATE ---
@@ -386,13 +448,13 @@ $where  = [];
 $values = [];
 
 if ($search !== '') {
-    $where[]  = '(club_name LIKE ? OR description LIKE ?)';
+    $where[] = '(c.club_name LIKE ? OR c.description LIKE ?)';
     $values[] = '%' . $search . '%';
     $values[] = '%' . $search . '%';
 }
 
 if (in_array($filter, ['active', 'inactive'], true)) {
-    $where[]  = 'status = ?';
+    $where[] = 'c.status = ?';
     $values[] = $filter;
 }
 
@@ -400,11 +462,25 @@ $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
 $perPage = 6;
 $page    = max(1, (int) ($_GET['page'] ?? 1));
-$total   = count_sql($pdo, 'SELECT COUNT(*) AS total FROM clubs' . $whereSql, $values);
+$total = count_sql(
+    $pdo,
+    'SELECT COUNT(*) AS total FROM clubs c' . $whereSql,
+    $values
+);
 $page    = min($page, max(1, (int) ceil($total / $perPage)));
 $offset  = ($page - 1) * $perPage;
 
-$clubsQuery  = 'SELECT * FROM clubs' . $whereSql . ' ORDER BY club_name ASC LIMIT ? OFFSET ?';
+$clubsQuery = '
+    SELECT
+        c.*,
+        s.sport_name
+    FROM clubs c
+    LEFT JOIN club_sports cs ON c.club_id = cs.club_id
+    LEFT JOIN sports s ON cs.sport_id = s.sport_id
+    ' . $whereSql . '
+    ORDER BY c.club_name ASC
+    LIMIT ? OFFSET ?
+';
 $queryParams = array_merge($values, [$perPage, $offset]);
 $stmtClubs   = $pdo->prepare($clubsQuery);
 
@@ -451,6 +527,31 @@ $selected   = (!isset($_GET['new']) && $selectedId > 0)
 $selectedClubLinks = $selected ? rows($pdo, 'SELECT * FROM club_links WHERE club_id = ?', [$selected['club_id']]) : [];
 
 $verifiedUsers = rows($pdo, 'SELECT user_id, first_name, last_name, email FROM users WHERE email_verified = 1 ORDER BY first_name ASC');
+// Fetch active sports for the club creation form
+$availableSports = rows(
+    $pdo,
+    'SELECT sport_id, sport_name
+     FROM sports
+     WHERE is_active = 1
+     ORDER BY sport_name ASC'
+);
+
+// Load the sport currently assigned to the selected club
+$selectedSportId = 0;
+
+if ($selected) {
+    $clubSport = rows(
+        $pdo,
+        'SELECT sport_id
+         FROM club_sports
+         WHERE club_id = ?
+         LIMIT 1',
+        [$selected['club_id']]
+    );
+
+    $selectedSportId = (int) ($clubSport[0]['sport_id'] ?? 0);
+}
+
 
 $currentPresident = 0;
 $currentVice      = 0;
@@ -526,6 +627,8 @@ admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned 
             <tr>
                 <th>Logo</th>
                 <th>Club Name</th>
+                <th>Club Type</th>
+                <th>Sport</th>
                 <th>President</th>
                 <th>Vice President</th>
                 <th>Links</th>
@@ -545,6 +648,13 @@ admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned 
                     </td>
                     <td>
                         <div class="table-title"><?= e($club['club_name']) ?></div>
+                    </td>
+                    <td>
+                        <?= ($club['club_type'] === 'sports') ? 'Sports' : 'General' ?>
+                    </td>
+
+                    <td>
+                        <?= e($club['sport_name'] ?? '—') ?>
                     </td>
                     <td><?= e($club['president']) ?></td>
                     <td><?= e($club['vice_president']) ?></td>
@@ -575,7 +685,7 @@ admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned 
 
             <?php if (!$clubs): ?>
                 <tr>
-                    <td class="empty" colspan="7">No clubs found.</td>
+                    <td class="empty" colspan="9">No clubs found.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
@@ -648,6 +758,40 @@ admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned 
             <div class="field">
                 <label>Club Name *</label>
                 <input name="club_name" required maxlength="150" value="<?= e($selected['club_name'] ?? '') ?>">
+            </div>
+
+            <!-- Club Type Selection -->
+            <div class="field">
+                <label for="club_type">Club Type *</label>
+                <select name="club_type" id="club_type" required>
+                    <option value="general"
+                        <?= ($selected['club_type'] ?? 'general') === 'general' ? 'selected' : '' ?>>
+                        General Club
+                    </option>
+
+                    <option value="sports"
+                        <?= ($selected['club_type'] ?? '') === 'sports' ? 'selected' : '' ?>>
+                        Sports Club
+                    </option>
+                </select>
+            </div>
+
+            <!-- Sport Selection -->
+            <div class="field" id="sport-selection"
+                style="<?= ($selected['club_type'] ?? 'general') === 'sports' ? '' : 'display:none;' ?>">
+
+                <label for="sport_id">Select Sport *</label>
+
+                <select name="sport_id" id="sport_id">
+                    <option value="">-- Select Sport --</option>
+
+                    <?php foreach ($availableSports as $sport): ?>
+                        <option value="<?= (int) $sport['sport_id'] ?>"
+                            <?= $selectedSportId === (int) $sport['sport_id'] ? 'selected' : '' ?>>
+                            <?= e($sport['sport_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
 
             <div class="field">
@@ -770,5 +914,29 @@ admin_header('Clubs & Leadership', 'Manage campus clubs, societies and assigned 
 </div>
 
 <p class="small">To retire a club from active campus use, set its status to inactive.</p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const clubType = document.getElementById('club_type');
+    const sportSelection = document.getElementById('sport-selection');
+    const sportInput = document.getElementById('sport_id');
+
+    if (!clubType || !sportSelection || !sportInput) return;
+
+    function toggleSportSelection() {
+        const isSports = clubType.value === 'sports';
+
+        sportSelection.style.display = isSports ? '' : 'none';
+        sportInput.required = isSports;
+
+        if (!isSports) {
+            sportInput.value = '';
+        }
+    }
+
+    clubType.addEventListener('change', toggleSportSelection);
+    toggleSportSelection();
+});
+</script>
 
 <?php admin_footer(); ?>

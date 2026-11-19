@@ -11,8 +11,8 @@ require_once __DIR__ . '/../config/database.php';
 // Relative path from pages/ folder to assets/css/page_style.css
 $pageCSS = '../assets/css/page_style.css';
 
-// Sports main section category ID (3000)
-$sportsParentId = 3000;
+// Sports main section category ID (3)
+$sportsParentId = 3;
 
 // 2. Capture filter inputs from the URL query string
 $searchKeyword = trim($_GET['search'] ?? '');
@@ -140,6 +140,36 @@ try {
     $allMonths = [];
 }
 
+function sports_image_url(?string $path): string
+{
+    $fallback = 'https://placehold.co/400x200?text=No+Image';
+
+    if (empty(trim($path ?? ''))) {
+        return $fallback;
+    }
+
+    $path = trim(str_replace('\\', '/', $path));
+
+    // Complete external URL
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    // Remove ../ and ./
+    $path = preg_replace('#^(\.\./|\./)+#', '', $path);
+
+    // Already has project root
+    if (str_starts_with($path, '/NSBM_360/')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, 'NSBM_360/')) {
+        return '/' . $path;
+    }
+
+    return '/NSBM_360/' . ltrim($path, '/');
+}
+
 // Helper function to render grid and pagination markup
 function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPages) {
     $maxVisible = 4;
@@ -155,7 +185,11 @@ function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPag
                 <div class="col">
                     <a href="news_details.php?id=<?= $post['post_id'] ?>" class="text-decoration-none h-100 d-block">
                         <div class="card h-100 card-hover-effect">
-                            <img src="<?= htmlspecialchars($post['cover_image'] ?? 'https://via.placeholder.com/400x200') ?>" class="card-img-top" alt="Cover Image">
+                            <img
+                                src="<?= htmlspecialchars(sports_image_url($post['cover_image'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
+                                class="card-img-top"
+                                alt="<?= htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8') ?>"
+                            >
                             <div class="card-body d-flex flex-column">
                                 <div class="mb-2">
                                     <span class="badge bg-primary px-2 py-1 rounded"><?= htmlspecialchars($post['category_name']) ?></span>
@@ -312,68 +346,6 @@ include __DIR__ . '/../includes/navbar.php';
     <div id="postsContainer">
         <?php renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPages); ?>
     </div>
-
-    <!-- Upcoming Sports Events Section -->
-    <?php
-    try {
-        $upcomingSql = "
-            SELECT e.*, p.title, p.summary, p.cover_image, p.post_id
-            FROM events e
-            INNER JOIN posts p ON e.post_id = p.post_id
-            WHERE TRIM(LOWER(p.status)) = 'published'
-              AND e.event_date >= CURDATE()
-              AND (p.subcategory_id = 38 OR p.sport_id IS NOT NULL)
-            ORDER BY e.event_date ASC, e.start_time ASC
-            LIMIT 3
-        ";
-        $upcomingStmt = $pdo->query($upcomingSql);
-        $upcomingEvents = $upcomingStmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (\PDOException $e) {
-        $upcomingEvents = [];
-    }
-    ?>
-
-    <section class="mt-5 pt-5 border-top">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold text-dark mb-1">Upcoming Sports Events</h2>
-                <p class="text-muted small mb-0">Don't miss out on upcoming matches, tournaments, and athletic meets.</p>
-            </div>
-            <a href="events.php" class="text-success text-decoration-none fw-semibold">All events &rarr;</a>
-        </div>
-
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            <?php if (count($upcomingEvents) > 0): ?>
-                <?php foreach ($upcomingEvents as $ev): ?>
-                    <div class="col">
-                        <a href="news_details.php?id=<?= $ev['post_id'] ?>" class="text-decoration-none h-100 d-block">
-                            <div class="card h-100 card-hover-effect border-0 shadow-sm">
-                                <img src="<?= htmlspecialchars($ev['cover_image'] ?? 'https://via.placeholder.com/400x200') ?>" class="card-img-top" alt="Event Cover">
-                                <div class="card-body d-flex flex-column">
-                                    <div class="mb-2 d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-success px-2 py-1 rounded">UPCOMING EVENT</span>
-                                        <span class="text-muted small fw-semibold"><?= date('d M Y', strtotime($ev['event_date'])) ?></span>
-                                    </div>
-                                    <h5 class="card-title fw-bold text-dark"><?= htmlspecialchars($ev['title']) ?></h5>
-                                    <p class="card-text text-muted small flex-grow-1"><?= htmlspecialchars($ev['summary']) ?></p>
-                                    <div class="mt-3 pt-2 border-top small text-muted">
-                                        <div><strong>Time:</strong> <?= date('h:i A', strtotime($ev['start_time'])) ?></div>
-                                        <div><strong>Venue:</strong> <?= htmlspecialchars($ev['venue']) ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12">
-                    <div class="card p-4 text-center bg-light border-0">
-                        <p class="text-muted mb-0">No upcoming sports events scheduled right now. Check back soon!</p>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    </section>
 
 </main>
 
