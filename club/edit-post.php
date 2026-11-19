@@ -238,7 +238,9 @@ if ($post) {
 
 // GET SELECTED FACULTIES
 
+
 $selectedFacultyIds = [];
+$allFacultiesChecked = false;
 
 if ($post) {
 
@@ -256,7 +258,17 @@ if ($post) {
         'intval',
         $facultyStmt->fetchAll(PDO::FETCH_COLUMN)
     );
+
 }
+
+$validFacultyIds = array_map(
+    'intval',
+    array_column($faculties, 'faculty_id')
+);
+
+$allFacultiesChecked = count($validFacultyIds) > 0
+    && count(array_intersect($selectedFacultyIds, $validFacultyIds))
+       === count($validFacultyIds);
 
 
 $errors = [];
@@ -317,18 +329,27 @@ if ($post && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $eventEndValue = $eventEndAt;
 
 
-    $facultyIds = $_POST['faculty_ids'] ?? [];
+    
+    // SELECTED FACULTIES
 
-    if (!is_array($facultyIds)) {
-        $facultyIds = [];
+    $allFacultiesChecked = ($_POST['all_faculties'] ?? '') === '1';
+
+    $submittedFacultyIds = $_POST['faculty_ids'] ?? [];
+
+    if (!is_array($submittedFacultyIds)) {
+        $errors[] = 'Invalid faculty selection.';
+        $submittedFacultyIds = [];
     }
 
-    $facultyIds = array_unique(
-        array_filter(
-            array_map('intval', $facultyIds),
-            fn($id) => $id > 0
-        )
-    );
+    $facultyIds = $allFacultiesChecked
+        ? $validFacultyIds
+        : array_values(array_unique(
+            array_filter(
+                array_map('intval', $submittedFacultyIds),
+                fn($id) => $id > 0
+            )
+        ));
+
 
 
     // VALIDATION
@@ -1479,43 +1500,58 @@ require_once __DIR__ . '/president_header.php';
                     </div>
 
 
+
                     <!-- FACULTIES -->
 
-                    <div class="form-group faculty-section">
+                    <div class="form-group faculty-checkbox-group">
 
-                        <label class="faculty-heading">Relevant Faculties</label>
+                        <label>Relevant Faculties</label>
 
-                        <small class="faculty-description">
-                            Select the faculties that this post is relevant to.
-                            You can select more than one.
+                        <small>
+                            Select one or more faculties, or choose All Faculties.
                         </small>
 
-                        <div class="faculty-checkbox-grid">
+                        <div class="faculty-selection">
 
-                            <?php foreach ($faculties as $faculty): ?>
+                            <label class="faculty-option faculty-all">
+                                <input
+                                    type="checkbox"
+                                    id="all_faculties"
+                                    name="all_faculties"
+                                    value="1"
+                                    <?= $allFacultiesChecked ? 'checked' : '' ?>
+                                >
+                                <strong>All Faculties</strong>
+                            </label>
 
-                                <label class="faculty-checkbox">
+                            <div id="faculty-options">
 
-                                    <input
-                                        type="checkbox"
-                                        name="faculty_ids[]"
-                                        value="<?= (int) $faculty['faculty_id'] ?>"
-                                        <?= in_array(
-                                            (int) $faculty['faculty_id'],
-                                            $selectedFacultyIds,
-                                            true
-                                        ) ? 'checked' : '' ?>
-                                    >
+                                <?php foreach ($faculties as $faculty): ?>
 
-                                    <?= e($faculty['faculty_name']) ?>
+                                    <label class="faculty-option">
+                                        <input
+                                            type="checkbox"
+                                            class="faculty-checkbox"
+                                            name="faculty_ids[]"
+                                            value="<?= (int) $faculty['faculty_id'] ?>"
+                                            <?= in_array(
+                                                (int) $faculty['faculty_id'],
+                                                $selectedFacultyIds,
+                                                true
+                                            ) ? 'checked' : '' ?>
+                                        >
 
-                                </label>
+                                        <?= e($faculty['faculty_name']) ?>
+                                    </label>
 
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+
+                            </div>
 
                         </div>
 
                     </div>
+
 
 
                     <!-- SUMMARY -->
@@ -1688,6 +1724,53 @@ require_once __DIR__ . '/president_header.php';
     </main>
 
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const allCheckbox = document.getElementById('all_faculties');
+    const facultyCheckboxes = document.querySelectorAll('.faculty-checkbox');
+
+    if (!allCheckbox) return;
+
+    function updateFacultySelection() {
+        facultyCheckboxes.forEach(checkbox => {
+            if (allCheckbox.checked) {
+                checkbox.checked = true;
+                checkbox.disabled = true;
+            } else {
+                checkbox.disabled = false;
+            }
+        });
+    }
+
+    allCheckbox.addEventListener('change', function () {
+        if (!this.checked) {
+            facultyCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        updateFacultySelection();
+    });
+
+    facultyCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const allSelected = Array.from(facultyCheckboxes)
+                .every(item => item.checked);
+
+            if (allSelected && facultyCheckboxes.length > 0) {
+                allCheckbox.checked = true;
+                updateFacultySelection();
+            }
+        });
+    });
+
+    updateFacultySelection();
+
+});
+</script>
 
 
 <script src="/NSBM_360/assets/js/president-edit-post.js" defer></script>

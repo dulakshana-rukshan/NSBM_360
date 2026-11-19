@@ -1,107 +1,252 @@
+document.addEventListener("DOMContentLoaded", function () {
+  // DESCRIPTION EDITING
+  const descriptionDisplay = document.getElementById("clubDescriptionDisplay");
+  const descriptionEditor = document.getElementById("clubDescriptionEditor");
 
-document.addEventListener('DOMContentLoaded', function () {
+  if (descriptionDisplay && descriptionEditor) {
+    descriptionDisplay.addEventListener("click", function () {
+      descriptionDisplay.hidden = true;
+      descriptionEditor.hidden = false;
 
-    // DESCRIPTION EDITING
-    const descriptionDisplay = document.getElementById('clubDescriptionDisplay');
-    const descriptionEditor = document.getElementById('clubDescriptionEditor');
+      const textarea = document.getElementById("clubDescriptionInput");
+      if (textarea) textarea.focus();
+    });
+  }
 
-    if (descriptionDisplay && descriptionEditor) {
-        descriptionDisplay.addEventListener('click', function () {
-            descriptionDisplay.hidden = true;
-            descriptionEditor.hidden = false;
+  // LOGO IMAGE PREVIEW
+  // LOGO IMAGE EDITOR
 
-            const textarea = document.getElementById('clubDescriptionInput');
-            if (textarea) textarea.focus();
-        });
+  const logoInput = document.getElementById("clubLogoInput");
+  const logoEditBtn = document.getElementById("clubLogoEditBtn");
+  const logoPreview = document.getElementById("clubLogoPreview");
+  const logoPlaceholder = document.getElementById("clubLogoPlaceholder");
+
+  const logoModal = document.getElementById("logoEditorModal");
+  const cropArea = document.getElementById("logoCropArea");
+  const cropImage = document.getElementById("logoCropImage");
+  const zoomSlider = document.getElementById("logoZoom");
+  const applyBtn = document.getElementById("logoApplyBtn");
+  const cancelBtn = document.getElementById("logoCancelBtn");
+  const changeLogoBtn = document.getElementById("changeLogoBtn");
+
+  if (logoInput && logoPreview && logoModal) {
+    changeLogoBtn.addEventListener("click", function () {
+      logoInput.click();
+    });
+    let image = new Image();
+    let imageURL = null;
+    let baseScale = 1;
+    let zoom = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let previousX = 0;
+    let previousY = 0;
+
+    function updateCropPreview() {
+      const scale = baseScale * zoom;
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+
+      cropImage.style.width = width + "px";
+      cropImage.style.height = height + "px";
+      cropImage.style.left = 120 - width / 2 + offsetX + "px";
+      cropImage.style.top = 120 - height / 2 + offsetY + "px";
     }
 
-    // LOGO IMAGE PREVIEW
-    const logoInput = document.getElementById('clubLogoInput');
-    const logoPreview = document.getElementById('clubLogoPreview');
-    const logoPlaceholder = document.getElementById('clubLogoPlaceholder');
+    function openEditor(src) {
+      image = new Image();
 
-    if (logoInput && logoPreview) {
-        logoInput.addEventListener('change', function () {
-            const file = this.files[0];
+      image.onload = function () {
+        const size = 240;
 
-            if (!file) return;
+        baseScale = Math.max(
+          size / image.naturalWidth,
+          size / image.naturalHeight,
+        );
 
-            const imageURL = URL.createObjectURL(file);
+        zoom = 1;
+        offsetX = 0;
+        offsetY = 0;
 
-            logoPreview.src = imageURL;
-            logoPreview.hidden = false;
+        zoomSlider.value = 1;
+        cropImage.src = src;
 
-            if (logoPlaceholder) {
-                logoPlaceholder.hidden = true;
-            }
-        });
+        logoModal.hidden = false;
+        updateCropPreview();
+      };
+
+      image.src = src;
     }
 
-    // BANNER IMAGE PREVIEW
-    const bannerInput = document.getElementById('clubBannerInput');
-    const bannerImage = document.getElementById('clubBannerImage');
+    logoInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file) return;
 
-    if (bannerInput && bannerImage) {
-        bannerInput.addEventListener('change', function () {
-            const file = this.files[0];
+      if (imageURL) URL.revokeObjectURL(imageURL);
 
-            if (!file) return;
+      imageURL = URL.createObjectURL(file);
+      openEditor(imageURL);
+    });
 
-            bannerImage.src = URL.createObjectURL(file);
-            bannerImage.hidden = false;
-        });
-    }
+    // Click existing logo to adjust it.
+    logoEditBtn.addEventListener("click", function (event) {
+      event.preventDefault();
 
+      const currentLogo = logoPreview.getAttribute("src");
+
+      if (currentLogo && !logoPreview.hidden) {
+        openEditor(logoPreview.src);
+      } else {
+        logoInput.click();
+      }
+    });
+    zoomSlider.addEventListener("input", function () {
+      zoom = Number(this.value);
+      updateCropPreview();
+    });
+
+    cropArea.addEventListener("pointerdown", function (event) {
+      dragging = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      previousX = offsetX;
+      previousY = offsetY;
+
+      cropArea.setPointerCapture(event.pointerId);
+    });
+
+    cropArea.addEventListener("pointermove", function (event) {
+      if (!dragging) return;
+
+      offsetX = previousX + event.clientX - startX;
+      offsetY = previousY + event.clientY - startY;
+
+      updateCropPreview();
+    });
+
+    cropArea.addEventListener("pointerup", function () {
+      dragging = false;
+    });
+
+    cropArea.addEventListener("pointercancel", function () {
+      dragging = false;
+    });
+
+    cancelBtn.addEventListener("click", function () {
+      logoModal.hidden = true;
+    });
+
+    applyBtn.addEventListener("click", function () {
+      const canvas = document.createElement("canvas");
+      const size = 500;
+
+      canvas.width = size;
+      canvas.height = size;
+
+      const ctx = canvas.getContext("2d");
+      const ratio = size / 240;
+
+      ctx.clearRect(0, 0, size, size);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.clip();
+
+      const scale = baseScale * zoom * ratio;
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+
+      ctx.drawImage(
+        image,
+        size / 2 - width / 2 + offsetX * ratio,
+        size / 2 - height / 2 + offsetY * ratio,
+        width,
+        height,
+      );
+
+      ctx.restore();
+
+      canvas.toBlob(function (blob) {
+        if (!blob) return;
+
+        const file = new File([blob], "club-logo.png", { type: "image/png" });
+
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+
+        logoInput.files = transfer.files;
+
+        logoPreview.src = URL.createObjectURL(blob);
+        logoPreview.hidden = false;
+
+        if (logoPlaceholder) {
+          logoPlaceholder.hidden = true;
+        }
+
+        logoModal.hidden = true;
+      }, "image/png");
+    });
+  }
+
+  // BANNER IMAGE PREVIEW
+  const bannerInput = document.getElementById("clubBannerInput");
+  const bannerImage = document.getElementById("clubBannerImage");
+
+  if (bannerInput && bannerImage) {
+    bannerInput.addEventListener("change", function () {
+      const file = this.files[0];
+
+      if (!file) return;
+
+      bannerImage.src = URL.createObjectURL(file);
+      bannerImage.hidden = false;
+    });
+  }
 });
 
 // ========================================
 // CLUB SOCIAL LINKS - EDIT PANEL
 // ========================================
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
+  const editButton = document.getElementById("editSocialLinksBtn");
+  const editPanel = document.getElementById("clubSocialEditPanel");
+  const addButton = document.getElementById("addSocialLink");
+  const socialList = document.getElementById("clubSocialList");
 
-    const editButton = document.getElementById('editSocialLinksBtn');
-    const editPanel = document.getElementById('clubSocialEditPanel');
-    const addButton = document.getElementById('addSocialLink');
-    const socialList = document.getElementById('clubSocialList');
+  // ------------------------------------
+  // SHOW / HIDE SOCIAL LINKS EDIT PANEL
+  // ------------------------------------
 
+  if (editButton && editPanel) {
+    editButton.addEventListener("click", function () {
+      editPanel.hidden = !editPanel.hidden;
 
-    // ------------------------------------
-    // SHOW / HIDE SOCIAL LINKS EDIT PANEL
-    // ------------------------------------
+      editButton.innerHTML = editPanel.hidden
+        ? '<i class="bi bi-pencil-square"></i>'
+        : '<i class="bi bi-x-lg"></i>';
 
-    if (editButton && editPanel) {
+      editButton.title = editPanel.hidden
+        ? "Edit official links"
+        : "Close editing";
+    });
+  }
 
-        editButton.addEventListener('click', function () {
+  // ------------------------------------
+  // ADD NEW SOCIAL LINK
+  // ------------------------------------
 
-            editPanel.hidden = !editPanel.hidden;
+  if (addButton && socialList) {
+    addButton.addEventListener("click", function () {
+      const row = document.createElement("div");
 
-            editButton.innerHTML = editPanel.hidden
-                ? '<i class="bi bi-pencil-square"></i>'
-                : '<i class="bi bi-x-lg"></i>';
+      row.className = "club-social-row";
 
-            editButton.title = editPanel.hidden
-                ? 'Edit official links'
-                : 'Close editing';
-
-        });
-
-    }
-
-
-    // ------------------------------------
-    // ADD NEW SOCIAL LINK
-    // ------------------------------------
-
-    if (addButton && socialList) {
-
-        addButton.addEventListener('click', function () {
-
-            const row = document.createElement('div');
-
-            row.className = 'club-social-row';
-
-            row.innerHTML = `
+      row.innerHTML = `
                 <input type="hidden" name="link_id[]" value="">
 
                 <div class="club-social-icon">
@@ -138,54 +283,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 </span>
             `;
 
-            const platformInput = row.querySelector(
-                'input[name="platform[]"]'
-            );
+      const platformInput = row.querySelector('input[name="platform[]"]');
 
-            const icon = row.querySelector('.club-social-icon i');
+      const icon = row.querySelector(".club-social-icon i");
 
-            const removeButton = row.querySelector(
-                '.club-social-remove-new'
-            );
+      const removeButton = row.querySelector(".club-social-remove-new");
 
+      // Update icon when platform name changes.
+      platformInput.addEventListener("input", function () {
+        const platform = this.value.trim().toLowerCase();
 
-            // Update icon when platform name changes.
-            platformInput.addEventListener('input', function () {
+        const icons = {
+          facebook: "bi-facebook",
+          instagram: "bi-instagram",
+          whatsapp: "bi-whatsapp",
+          youtube: "bi-youtube",
+          tiktok: "bi-tiktok",
+          linkedin: "bi-linkedin",
+          twitter: "bi-twitter-x",
+          x: "bi-twitter-x",
+          website: "bi-globe",
+          telegram: "bi-telegram",
+          discord: "bi-discord",
+        };
 
-                const platform = this.value.trim().toLowerCase();
+        icon.className = "bi " + (icons[platform] || "bi-link-45deg");
+      });
 
-                const icons = {
-                    facebook: 'bi-facebook',
-                    instagram: 'bi-instagram',
-                    whatsapp: 'bi-whatsapp',
-                    youtube: 'bi-youtube',
-                    tiktok: 'bi-tiktok',
-                    linkedin: 'bi-linkedin',
-                    twitter: 'bi-twitter-x',
-                    x: 'bi-twitter-x',
-                    website: 'bi-globe',
-                    telegram: 'bi-telegram',
-                    discord: 'bi-discord'
-                };
+      // Remove newly added row.
+      removeButton.addEventListener("click", function () {
+        row.remove();
+      });
 
-                icon.className = 'bi ' + (
-                    icons[platform] || 'bi-link-45deg'
-                );
+      socialList.appendChild(row);
 
-            });
-
-
-            // Remove newly added row.
-            removeButton.addEventListener('click', function () {
-                row.remove();
-            });
-
-            socialList.appendChild(row);
-
-            platformInput.focus();
-
-        });
-
-    }
-
+      platformInput.focus();
+    });
+  }
 });

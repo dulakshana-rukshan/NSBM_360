@@ -1,15 +1,4 @@
 <?php
-/**
- * NSBM 360 - Public club detail page
- * Location: NSBM_360/pages/club_detail.php
- * Uses the TEAM'S UNCHANGED PDO connection: NSBM_360/config/database.php
- *
- * Tables from original database:
- *   clubs, users, club_memberships, posts, categories, events
- * Optional supporting tables:
- *   club_follows, club_messages, club_social_links
- * Images come from clubs.logo and clubs.banner_image in the database.
- */
 
 declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
@@ -28,33 +17,24 @@ function clubE($value): string {
 
 // Convert image paths stored relative to the project root into URLs from /pages.
 function clubImageUrl($value): string {
-    $path = trim((string)($value ?? ''));
-    if ($path === '' || str_contains($path, '..') || str_contains($path, chr(92))) return '';
+    $path = trim(str_replace('\\', '/', (string)($value ?? '')));
+    if ($path === '') return '';
     if (preg_match('~^https?://~i', $path)) return $path;
-    if (str_starts_with($path, '//') || str_starts_with($path, '/') || preg_match('~^[a-z][a-z0-9+.-]*:~i', $path)) return '';
-    return '../' . $path;
+    if (str_starts_with($path, '//') || preg_match('~^[a-z][a-z0-9+.-]*:~i', $path)) return '';
+    while (str_starts_with($path, '../') || str_starts_with($path, './')) {
+        $path = substr($path, str_starts_with($path, '../') ? 3 : 2);
+    }
+    if (str_starts_with($path, '/NSBM_360/')) $path = substr($path, strlen('/NSBM_360/'));
+    $path = ltrim($path, '/');
+    if (!preg_match('~^(uploads/(clubs|posts)/|assets/image/)~', $path) ||
+        str_contains($path, '..') || preg_match('/[?#\x00-\x1F\x7F]/', $path)) return '';
+    return '/NSBM_360/' . $path;
 }
 
 // Allow only safe HTTP(S) registration URLs from the database.
 function clubWebUrl($value): string {
     $url = trim((string)($value ?? ''));
     return filter_var($url, FILTER_VALIDATE_URL) && preg_match('~^https?://~i', $url) ? $url : '';
-}
-
-// Only accept actual WhatsApp group invitation and Instagram profile domains.
-// Links are read from club_social_links, never hard-coded in this page.
-function clubSocialUrl($value, string $network): string {
-    $url = clubWebUrl($value);
-    if ($url === '') return '';
-
-    $host = strtolower((string)(parse_url($url, PHP_URL_HOST) ?: ''));
-    if ($network === 'whatsapp' && $host === 'chat.whatsapp.com') {
-        return $url;
-    }
-    if ($network === 'instagram' && in_array($host, ['instagram.com', 'www.instagram.com'], true)) {
-        return $url;
-    }
-    return '';
 }
 
 // Work with UTF-8 text even if the optional mbstring extension is disabled.
@@ -81,6 +61,35 @@ function clubDate($value): string {
     return $time ? date('d M Y', $time) : 'Date not available';
 }
 
+// Resolve user profile photos without changing club banner/logo handling.
+function clubProfileImageUrl($value): string {
+    $path = trim(str_replace('\\', '/', (string)($value ?? '')));
+    if ($path === '') return '';
+    if (preg_match('~^https?://~i', $path)) return filter_var($path, FILTER_VALIDATE_URL) ? $path : '';
+    if (str_starts_with($path, '//') || preg_match('~^[a-z][a-z0-9+.-]*:~i', $path)) return '';
+    while (str_starts_with($path, '../') || str_starts_with($path, './')) {
+        $path = substr($path, str_starts_with($path, '../') ? 3 : 2);
+    }
+    if (str_starts_with($path, '/NSBM_360/')) $path = substr($path, strlen('/NSBM_360/'));
+    $path = ltrim($path, '/');
+    if (str_contains($path, '..') || preg_match('/[?#\x00-\x1F\x7F]/', $path)) return '';
+    if (!preg_match('~^(uploads/|assets/image/)~i', $path)) return '';
+    return '/NSBM_360/' . $path;
+}
+
+function clubLeaderAvatar(?array $leader): void {
+    $initials = $leader
+        ? strtoupper(substr((string)$leader['first_name'], 0, 1) . substr((string)$leader['last_name'], 0, 1))
+        : '—';
+    $photo = $leader ? clubProfileImageUrl($leader['profile_image'] ?? '') : '';
+    echo '<span class="club-leader-initials" style="position:relative;overflow:hidden;flex-shrink:0">';
+    echo clubE($initials);
+    if ($photo !== '') {
+        echo '<img src="' . clubE($photo) . '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">';
+    }
+    echo '</span>';
+}
+
 function clubFullName(array $person): string {
     return trim((string)($person['first_name'] ?? '') . ' ' . (string)($person['last_name'] ?? ''));
 }
@@ -89,7 +98,7 @@ function clubUrl(int $clubId, string $tab = 'overview', array $extra = []): stri
     return 'club_detail.php?' . http_build_query(array_merge(['id' => $clubId, 'tab' => $tab], $extra));
 }
 
-// 1) Select the current club using a verified integer ID, not a fixed club name.
+// Select the current club using a verified integer ID, not a fixed club name.
 $clubId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 if (!$clubId) {
     http_response_code(400);
@@ -109,12 +118,15 @@ if (!$club) {
 $pageTitle = $club['club_name'] . ' | NSBM 360';
 
 $tab = (string)($_GET['tab'] ?? 'overview');
-$validTabs = ['overview', 'news', 'leadership', 'get-involved', 'contact'];
+// Contact details are private to signed-in users; all other tabs are public.
+// Set this to your project's actual login page if it differs.
+$clubLoginUrl = '/NSBM_360/auth/login.php';
+$validTabs = ['overview', 'news', 'leadership', 'contact'];
 if (!in_array($tab, $validTabs, true)) $tab = 'overview';
 $newsFilter = (string)($_GET['filter'] ?? 'all');
 if (!in_array($newsFilter, ['all', 'events', 'news'], true)) $newsFilter = 'all';
 
-// 2) Read verified user's name and email from session ID, not from user input.
+// Read verified user's name and email from session ID, not from user input.
 $viewerId = (int)($_SESSION['user_id'] ?? 0);
 $viewer = null;
 if ($viewerId > 0) {
@@ -123,9 +135,14 @@ if ($viewerId > 0) {
     $viewer = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     if (!$viewer) $viewerId = 0;
 }
+if ($tab === 'contact' && !$viewer) {
+    $returnUrl = clubUrl($clubId, 'contact');
+    header('Location: ' . $clubLoginUrl . '?redirect=' . rawurlencode($returnUrl));
+    exit;
+}
 
-// 3) Read current President and Vice President from club_memberships.
-$stmt = $pdo->prepare("SELECT m.club_role, u.user_id, u.first_name, u.last_name, u.email, u.email_verified
+//Read current President and Vice President from club_memberships.
+$stmt = $pdo->prepare("SELECT m.club_role, u.user_id, u.first_name, u.last_name, u.email, u.email_verified, u.profile_image
                        FROM club_memberships m JOIN users u ON u.user_id = m.user_id
                        WHERE m.club_id = :club_id AND m.membership_status = 'active'
                        ORDER BY CASE m.club_role WHEN 'president' THEN 0 ELSE 1 END, m.joined_at ASC");
@@ -141,9 +158,38 @@ $isLeader = false;
 foreach ($leaders as $leader) {
     if ((int)$leader['user_id'] === $viewerId && $viewerId > 0) $isLeader = true;
 }
-$canViewMessages = $viewer && ($viewer['role'] === 'admin' || $isLeader);
+// Existing requests for this viewer, used to prevent duplicate pending requests.
+$myRoleRequests = [];
+if ($viewerId > 0) {
+    $stmt = $pdo->prepare("SELECT requested_role, request_status FROM role_requests WHERE club_id = ? AND user_id = ? ORDER BY requested_at DESC, request_id DESC");
+    $stmt->execute([$clubId, $viewerId]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $request) {
+        $role = $request['requested_role'];
+        if (!isset($myRoleRequests[$role])) $myRoleRequests[$role] = $request['request_status'];
+    }
+}
 
-// 4) Read published club posts, including the related event's real details.
+// Render an action only when the position is unfilled; keep existing leader UI.
+function clubRoleRequestControl(string $role, int $clubId, ?array $viewer, bool $isLeader, array $myRoleRequests, string $csrf, string $loginUrl, string $tab): void {
+    $label = $role === 'president' ? 'President' : 'Vice President';
+    if (!$viewer) {
+        $target = clubUrl($clubId, $tab);
+        echo '<a class="club-btn club-btn-outline" href="' . clubE($loginUrl . '?redirect=' . rawurlencode($target)) . '">Sign in to request</a>';
+    } elseif ($isLeader) {
+        echo '<span class="club-muted">Already a club leader</span>';
+    } elseif (($myRoleRequests[$role] ?? '') === 'pending') {
+        echo '<span class="club-muted">Request Pending</span>';
+    } else {
+        echo '<form method="post" action="' . clubE(clubUrl($clubId, $tab)) . '">';
+        echo '<input type="hidden" name="csrf" value="' . clubE($csrf) . '">';
+        echo '<input type="hidden" name="action" value="request_role">';
+        echo '<input type="hidden" name="requested_role" value="' . clubE($role) . '">';
+        echo '<button class="club-btn club-btn-outline" type="submit">Request as ' . clubE($label) . '</button></form>';
+    }
+}
+
+
+// Read published club posts, including the related event's real details.
 $stmt = $pdo->prepare("SELECT p.post_id, p.title, p.summary, p.content, p.cover_image, p.published_at,
                               cat.category_name, e.event_id, e.event_date, e.start_time, e.end_time,
                               e.venue, e.registration_deadline, e.registration_link
@@ -169,15 +215,14 @@ $filteredPosts = array_values(array_filter($allPosts, static function (array $p)
     return true;
 }));
 
-// 5) Create a security token for Follow and Contact forms.
+// Create a security token for Follow and Contact forms.
 if (empty($_SESSION['club_detail_csrf'])) {
     $_SESSION['club_detail_csrf'] = bin2hex(random_bytes(24));
 }
 $csrf = $_SESSION['club_detail_csrf'];
 
-// 6) The FOLLOW and CONTACT features need the optional SQL tables.
+// 6) Followers are counted from club_follows, not from a cached counter.
 $followReady = true;
-$contactReady = true;
 $followers = 0;
 $isFollowing = false;
 try {
@@ -193,25 +238,57 @@ try {
     $followReady = false;
     error_log('Club follows unavailable: ' . $exception->getMessage());
 }
-try {
-    $pdo->query('SELECT message_id FROM club_messages LIMIT 0');
-} catch (PDOException $exception) {
-    $contactReady = false;
-    error_log('Club messages unavailable: ' . $exception->getMessage());
-}
 
-// 7) Handle form submissions with POST + CSRF, then redirect to prevent resubmission.
+// Handle form submissions with POST + CSRF, then redirect to prevent resubmission.
 $formError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
-    $redirectTab = $action === 'send_message' ? 'contact' : 'get-involved';
+    $redirectTab = 'overview';
     $postedToken = (string)($_POST['csrf'] ?? '');
 
     if (!$viewer || !hash_equals($csrf, $postedToken)) {
         $formError = 'Please sign in and try again. Refresh the page if your session has expired.';
     } else {
         try {
-            if ($action === 'follow' && $followReady && $club['status'] === 'active') {
+            if ($action === 'request_role') {
+                $requestedRole = (string)($_POST['requested_role'] ?? '');
+                if (!in_array($requestedRole, ['president', 'vice_president'], true)) {
+                    $formError = 'Invalid leadership position.';
+                } elseif ($club['status'] !== 'active') {
+                    $formError = 'This club is not accepting requests.';
+                } else {
+                    // Lock the club record to serialize requests against other requests.
+                    $pdo->beginTransaction();
+                    try {
+                        $lock = $pdo->prepare('SELECT club_id FROM clubs WHERE club_id = ? FOR UPDATE');
+                        $lock->execute([$clubId]);
+                        $filled = $pdo->prepare("SELECT COUNT(*) FROM club_memberships WHERE club_id = ? AND club_role = ? AND membership_status = 'active'");
+                        $filled->execute([$clubId, $requestedRole]);
+                        $alreadyLeader = $pdo->prepare("SELECT COUNT(*) FROM club_memberships WHERE club_id = ? AND user_id = ? AND membership_status = 'active'");
+                        $alreadyLeader->execute([$clubId, $viewerId]);
+                        $pending = $pdo->prepare("SELECT COUNT(*) FROM role_requests WHERE club_id = ? AND user_id = ? AND request_status = 'pending'");
+                        $pending->execute([$clubId, $viewerId]);
+                        if ((int)$filled->fetchColumn() > 0) {
+                            $formError = 'This leadership position has already been filled.';
+                        } elseif ((int)$alreadyLeader->fetchColumn() > 0) {
+                            $formError = 'You already hold a leadership position in this club.';
+                        } elseif ((int)$pending->fetchColumn() > 0) {
+                            $formError = 'You already have a pending request for this club.';
+                        } else {
+                            $insert = $pdo->prepare("INSERT INTO role_requests (user_id, club_id, requested_role, request_status) VALUES (?, ?, ?, 'pending')");
+                            $insert->execute([$viewerId, $clubId, $requestedRole]);
+                        }
+                        $pdo->commit();
+                    } catch (Throwable $e) {
+                        if ($pdo->inTransaction()) $pdo->rollBack();
+                        throw $e;
+                    }
+                    if ($formError === '') {
+                        header('Location: ' . clubUrl($clubId, 'leadership', ['notice' => 'request_sent']));
+                        exit;
+                    }
+                }
+            } elseif ($action === 'follow' && $followReady && $club['status'] === 'active') {
                 // Unique (user_id, club_id) avoids duplicate follows.
                 $stmt = $pdo->prepare('INSERT IGNORE INTO club_follows (club_id, user_id) VALUES (?, ?)');
                 $stmt->execute([$clubId, $viewerId]);
@@ -222,19 +299,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$clubId, $viewerId]);
                 header('Location: ' . clubUrl($clubId, 'overview', ['notice' => 'unfollowed']));
                 exit;
-            } elseif ($action === 'send_message' && $contactReady) {
-                $subject = trim((string)($_POST['subject'] ?? ''));
-                $message = trim((string)($_POST['message'] ?? ''));
-                if ($subject === '' || clubLength($subject) > 150 || clubLength($message) < 10 || clubLength($message) > 2000) {
-                    $formError = 'Enter a subject (up to 150 characters) and a message between 10 and 2,000 characters.';
-                } else {
-                    $stmt = $pdo->prepare('INSERT INTO club_messages (club_id, sender_id, subject, message) VALUES (?, ?, ?, ?)');
-                    $stmt->execute([$clubId, $viewerId, $subject, $message]);
-                    header('Location: ' . clubUrl($clubId, 'contact', ['notice' => 'sent']));
-                    exit;
-                }
             } else {
-                $formError = 'This action is not available. Check whether you imported the test SQL.';
+                $formError = 'This action is not available. Please try again.';
             }
         } catch (PDOException $exception) {
             error_log('Club detail action failed: ' . $exception->getMessage());
@@ -244,39 +310,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tab = $redirectTab;
 }
 
-// 8) Read club social links. The extra table is optional until its SQL is imported.
-// No fake links are displayed when the club has not added its own URLs yet.
-$whatsappUrl = '';
-$instagramUrl = '';
-$socialTableReady = true;
+// All custom contact links are stored in the existing club_links table.
+$clubLinks = [];
 try {
-    $stmt = $pdo->prepare('SELECT whatsapp_group_url, instagram_profile_url FROM club_social_links WHERE club_id = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT link_id, platform, url FROM club_links WHERE club_id = ? ORDER BY link_id ASC');
     $stmt->execute([$clubId]);
-    $social = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-    $whatsappUrl = clubSocialUrl($social['whatsapp_group_url'] ?? '', 'whatsapp');
-    $instagramUrl = clubSocialUrl($social['instagram_profile_url'] ?? '', 'instagram');
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $link) {
+        $url = clubWebUrl($link['url'] ?? '');
+        $name = trim((string)($link['platform'] ?? ''));
+        if ($url !== '' && $name !== '') {
+            $clubLinks[] = ['name' => $name, 'url' => $url];
+        }
+    }
 } catch (PDOException $exception) {
-    $socialTableReady = false;
-    error_log('Club social links unavailable: ' . $exception->getMessage());
+    error_log('Club links unavailable: ' . $exception->getMessage());
 }
 
-// 9) Only the assigned leaders and administrators can read contact messages.
-$inbox = [];
-if ($canViewMessages && $contactReady && $tab === 'contact') {
-    $stmt = $pdo->prepare("SELECT cm.message_id, cm.subject, cm.message, cm.created_at,
-                                  u.first_name, u.last_name, u.email
-                           FROM club_messages cm JOIN users u ON u.user_id = cm.sender_id
-                           WHERE cm.club_id = ? ORDER BY cm.created_at DESC, cm.message_id DESC LIMIT 50");
-    $stmt->execute([$clubId]);
-    $inbox = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-$banner = clubImageUrl($club['banner_image'] ?? '');
+$banner = clubImageUrl($club['banner'] ?? '');
 $logo = clubImageUrl($club['logo'] ?? '');
 $notices = [
     'followed' => 'You are now following this club.',
     'unfollowed' => 'You have unfollowed this club.',
-    'sent' => 'Your message was saved. Club leaders can read it in their inbox.'
+    'request_sent' => 'Your leadership request has been submitted for admin review.'
 ];
 $notice = $notices[(string)($_GET['notice'] ?? '')] ?? '';
 
@@ -361,23 +416,22 @@ include __DIR__ . '/../includes/navbar.php';
                     </form>
                 <?php endif; ?>
             <?php elseif (!$viewer): ?>
-                <a class="club-btn club-btn-soft" href="../auth/login.php" title="Sign in to follow">+ Follow club</a>
+                <a class="club-btn club-btn-soft" href="<?= clubE($clubLoginUrl . '?redirect=' . rawurlencode(clubUrl($clubId))) ?>" title="Sign in to follow">+ Follow club</a>
             <?php endif; ?>
-            <a class="club-btn club-btn-green" href="<?= clubE(clubUrl($clubId, 'contact')) ?>">✉ Contact the club</a>
+            <a class="club-btn club-btn-green" href="<?= clubE(clubUrl($clubId, 'contact')) ?>">✉ Contact & Links</a>
         </div>
     </section>
 
     <?php if ($notice): ?><p class="club-alert club-alert-success" role="status"><?= clubE($notice) ?></p><?php endif; ?>
     <?php if ($formError): ?><p class="club-alert club-alert-error" role="alert"><?= clubE($formError) ?></p><?php endif; ?>
-    <?php if (!$followReady || !$contactReady): ?><p class="club-alert club-alert-error">Follow and messaging require the extra database tables. Import <code>database/club_detail_support.sql</code> from the ZIP.</p><?php endif; ?>
+    <?php if (!$followReady): ?><p class="club-alert club-alert-error">Club following is temporarily unavailable.</p><?php endif; ?>
 
     <!-- Each tab is a working PHP link, no JavaScript required. -->
     <nav class="club-tabs" aria-label="Club sections">
         <a class="<?= $tab === 'overview' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'overview')) ?>">Overview</a>
         <a class="<?= $tab === 'news' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'news')) ?>">News &amp; events</a>
         <a class="<?= $tab === 'leadership' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'leadership')) ?>">Leadership</a>
-        <a class="<?= $tab === 'get-involved' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'get-involved')) ?>">Get involved</a>
-        <a class="<?= $tab === 'contact' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'contact')) ?>">Contact</a>
+        <a class="<?= $tab === 'contact' ? 'active' : '' ?>" href="<?= clubE(clubUrl($clubId, 'contact')) ?>">Contact &amp; Links</a>
     </nav>
 
     <?php if ($tab === 'overview'): ?>
@@ -388,21 +442,13 @@ include __DIR__ . '/../includes/navbar.php';
                     <div class="club-panel-head"><h2>Meet the leadership</h2><a href="<?= clubE(clubUrl($clubId, 'leadership')) ?>">All leaders &rarr;</a></div>
                     <div class="club-leader-row">
                         <?php foreach (['President' => $president, 'Vice President' => $vicePresident] as $roleTitle => $leader): ?>
-                            <div class="club-leader-item"><span class="club-leader-initials"><?= $leader ? clubE(strtoupper(substr($leader['first_name'], 0, 1) . substr($leader['last_name'], 0, 1))) : '—' ?></span><div><small><?= clubE($roleTitle) ?></small><strong><?= $leader ? clubE(clubFullName($leader)) : 'Not assigned' ?></strong></div></div>
+                            <div class="club-leader-item"><?php clubLeaderAvatar($leader); ?><div><small><?= clubE($roleTitle) ?></small><strong><?= $leader ? clubE(clubFullName($leader)) : 'Position Available' ?></strong><?php if (!$leader && $club['status'] === 'active'): ?><div style="margin-top:8px"><?php clubRoleRequestControl($roleTitle === 'President' ? 'president' : 'vice_president', $clubId, $viewer, $isLeader, $myRoleRequests, $csrf, $clubLoginUrl, 'overview'); ?></div><?php endif; ?></div></div>
                         <?php endforeach; ?>
                     </div>
                 </section>
             </div>
             <aside class="club-side-column">
-                <section class="club-panel club-follow-panel"><h2>Get involved</h2><span class="club-soft-pill"><?= $club['status'] === 'active' ? 'ACTIVE CLUB' : 'INACTIVE CLUB' ?></span><div class="club-big-number"><?= $followReady ? number_format($followers) : '—' ?> <span>followers</span></div><p>Follow this club for a quick way to keep track of its community.</p><a class="club-btn club-btn-outline" href="<?= clubE(clubUrl($clubId, 'get-involved')) ?>">Explore opportunities &rarr;</a></section>
-                <section class="club-tip"><strong>Explore this club</strong><p>Read published stories, find upcoming events, and meet your club leaders.</p></section>
-                <?php if ($whatsappUrl || $instagramUrl): ?>
-                    <section class="club-panel club-side-social">
-                        <h2>Connect with the club</h2>
-                        <?php if ($whatsappUrl): ?><a class="club-btn club-btn-social-whatsapp" href="<?= clubE($whatsappUrl) ?>" target="_blank" rel="noopener noreferrer">WhatsApp group ↗</a><?php endif; ?>
-                        <?php if ($instagramUrl): ?><a class="club-btn club-btn-social-instagram" href="<?= clubE($instagramUrl) ?>" target="_blank" rel="noopener noreferrer">Instagram profile ↗</a><?php endif; ?>
-                    </section>
-                <?php endif; ?>
+                <section class="club-panel club-follow-panel"><h2>Followers</h2><span class="club-soft-pill"><?= $club['status'] === 'active' ? 'ACTIVE CLUB' : 'INACTIVE CLUB' ?></span><div class="club-big-number"><?= $followReady ? number_format($followers) : '—' ?> <span>followers</span></div><p>Follow this club to show your support.</p></section>
             </aside>
         </div>
         <section class="club-community-section"><div class="club-section-head"><h2>From the community</h2><a href="<?= clubE(clubUrl($clubId, 'news')) ?>">All club posts &rarr;</a></div><?php clubRenderCards(array_slice($allPosts, 0, 3), $clubId); ?></section>
@@ -431,82 +477,28 @@ include __DIR__ . '/../includes/navbar.php';
         <section class="club-panel club-narrow"><h2>Club leadership</h2><p class="club-muted">Active assignments from your NSBM 360 club membership records.</p>
             <div class="club-leader-list">
                 <?php foreach (['President' => $president, 'Vice President' => $vicePresident] as $roleTitle => $leader): ?>
-                    <div class="club-leader-detail"><span class="club-leader-initials"><?= $leader ? clubE(strtoupper(substr($leader['first_name'], 0, 1) . substr($leader['last_name'], 0, 1))) : '—' ?></span><div><small><?= clubE($roleTitle) ?></small><strong><?= $leader ? clubE(clubFullName($leader)) : 'Not assigned' ?></strong><?php if ($leader): ?><p><?= (int)$leader['email_verified'] ? 'Verified account' : 'Email not verified' ?></p><?php endif; ?></div><?php if ($leader): ?><a class="club-btn club-btn-outline" href="mailto:<?= clubE($leader['email']) ?>">Email</a><?php endif; ?></div>
+                    <div class="club-leader-detail"><?php clubLeaderAvatar($leader); ?><div><small><?= clubE($roleTitle) ?></small><strong><?= $leader ? clubE(clubFullName($leader)) : 'Position Available' ?></strong><?php if (!$leader && $club['status'] === 'active'): ?><div style="margin-top:8px"><?php clubRoleRequestControl($roleTitle === 'President' ? 'president' : 'vice_president', $clubId, $viewer, $isLeader, $myRoleRequests, $csrf, $clubLoginUrl, 'leadership'); ?></div><?php endif; ?><?php if ($leader): ?><p><?= (int)$leader['email_verified'] ? 'Verified account' : 'Email not verified' ?></p><?php endif; ?></div><?php if ($leader): ?><a class="club-btn club-btn-outline" href="mailto:<?= clubE($leader['email']) ?>">Email</a><?php endif; ?></div>
                 <?php endforeach; ?>
-            </div><p class="club-muted">Leadership assignments are maintained by NSBM 360 administrators.</p><a href="<?= clubE(clubUrl($clubId, 'get-involved')) ?>" class="club-text-link">Club group links &rarr;</a>
+            </div><p class="club-muted">Leadership assignments are maintained by NSBM 360 administrators.</p><a href="<?= clubE(clubUrl($clubId, 'contact')) ?>" class="club-text-link">Club contact links &rarr;</a>
         </section>
 
-    <?php elseif ($tab === 'get-involved'): ?>
-        <div class="club-layout">
-            <section class="club-panel">
-                <h2>Get involved with <?= clubE($club['club_name']) ?></h2>
-                <p class="club-muted">Follow this club and join its community through the official group links.</p>
-
-                <h3>Follow the club</h3>
-                <p><strong><?= $followReady ? number_format($followers) : '—' ?></strong> followers</p>
-                <?php if (!$viewer): ?>
-                    <p>Sign in to follow this club.</p>
-                    <a class="club-btn club-btn-green" href="../auth/login.php">Sign in to follow</a>
-                <?php elseif (!$followReady): ?>
-                    <p>Import the club follow table SQL to enable this feature.</p>
-                <?php elseif ($club['status'] !== 'active' && !$isFollowing): ?>
-                    <p>This club is inactive and is not accepting new followers.</p>
-                <?php else: ?>
-                    <form method="post" action="<?= clubE(clubUrl($clubId, 'get-involved')) ?>">
-                        <input type="hidden" name="csrf" value="<?= clubE($csrf) ?>">
-                        <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
-                        <button type="submit" class="club-btn club-btn-green"><?= $isFollowing ? 'Unfollow club' : '+ Follow this club' ?></button>
-                    </form>
-                <?php endif; ?>
-
-                <hr class="club-separator">
-                <h3>Club social links</h3>
-                <p class="club-muted">Use these links to join the WhatsApp group or visit the club's Instagram profile.</p>
-
-                <?php if (!$socialTableReady): ?>
-                    <p class="club-muted">Social links are not configured yet. Import the included <code>database/club_detail_support.sql</code> file.</p>
-                <?php endif; ?>
+    <?php else: /* Contact tab: login checked before rendering */ ?>
+        <section class="club-panel club-narrow">
+            <h2>Contact &amp; Links</h2>
+            <p class="club-muted">Official links shared by <?= clubE($club['club_name']) ?>.</p>
+            <?php if (!$clubLinks): ?>
+                <p class="club-muted">No contact links have been added yet.</p>
+            <?php else: ?>
                 <div class="club-social-list">
-                    <div class="club-social-item">
-                        <div><strong>WhatsApp group</strong><p>Join the club's group chat for community updates.</p></div>
-                        <?php if ($whatsappUrl): ?>
-                            <a class="club-btn club-btn-social-whatsapp" href="<?= clubE($whatsappUrl) ?>" target="_blank" rel="noopener noreferrer">Join WhatsApp group ↗</a>
-                        <?php else: ?>
-                            <span class="club-social-unavailable">Link not added yet</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="club-social-item">
-                        <div><strong>Instagram profile</strong><p>See photos, stories and club announcements.</p></div>
-                        <?php if ($instagramUrl): ?>
-                            <a class="club-btn club-btn-social-instagram" href="<?= clubE($instagramUrl) ?>" target="_blank" rel="noopener noreferrer">Open Instagram ↗</a>
-                        <?php else: ?>
-                            <span class="club-social-unavailable">Link not added yet</span>
-                        <?php endif; ?>
-                    </div>
+                    <?php foreach ($clubLinks as $link): ?>
+                        <div class="club-social-item">
+                            <div><strong><?= clubE($link['name']) ?></strong></div>
+                            <a class="club-btn club-btn-outline" href="<?= clubE($link['url']) ?>" target="_blank" rel="noopener noreferrer">Open link &nearr;</a>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-            </section>
-            <aside class="club-side-column">
-                <div class="club-tip">
-                    <strong>Stay connected</strong>
-                    <p>Follow this club here and use its official social links. Links are different for every club.</p>
-                </div>
-            </aside>
-        </div>
-
-    <?php else: /* Contact tab */ ?>
-        <div class="club-layout">
-            <section class="club-panel"><h2>Contact <?= clubE($club['club_name']) ?></h2><p class="club-muted">Messages are saved securely in NSBM 360 and visible to this club's active leaders and platform administrators.</p>
-                <?php if (!$contactReady): ?><p>Import the included SQL file to enable club messages.</p>
-                <?php elseif (!$viewer): ?><p>Please sign in before sending a message.</p><a class="club-btn club-btn-green" href="../login.php">Sign in</a>
-                <?php else: ?>
-                    <form method="post" action="<?= clubE(clubUrl($clubId, 'contact')) ?>" class="club-stack-form"><input type="hidden" name="csrf" value="<?= clubE($csrf) ?>"><input type="hidden" name="action" value="send_message"><label for="subject">Subject</label><input id="subject" name="subject" maxlength="150" required value="<?= clubE($_POST['subject'] ?? '') ?>" placeholder="What would you like to ask?"><label for="message">Message (10–2,000 characters)</label><textarea id="message" name="message" rows="6" minlength="10" maxlength="2000" required placeholder="Write a message to club leadership"><?= clubE($_POST['message'] ?? '') ?></textarea><button class="club-btn club-btn-green" type="submit">Send message</button></form>
-                <?php endif; ?>
-            </section>
-            <aside class="club-side-column"><div class="club-panel"><h2>Club contacts</h2><?php if ($president): ?><p><strong>President</strong><br><?= clubE(clubFullName($president)) ?></p><?php endif; ?><?php if ($vicePresident): ?><p><strong>Vice President</strong><br><?= clubE(clubFullName($vicePresident)) ?></p><?php endif; ?><?php if (!$president && !$vicePresident): ?><p>No active leaders have been assigned yet.</p><?php endif; ?></div></aside>
-        </div>
-        <?php if ($canViewMessages && $contactReady): ?>
-            <section class="club-panel club-inbox"><h2>Club message inbox</h2><p class="club-muted">Only the club's active leaders and administrators can see these messages.</p><?php if (!$inbox): ?><p>No messages received yet.</p><?php endif; ?><?php foreach ($inbox as $item): ?><article class="club-inbox-item"><div><strong><?= clubE($item['subject']) ?></strong><span><?= clubE(clubFullName($item)) ?> · <?= clubE(clubDate($item['created_at'])) ?></span></div><p><?= nl2br(clubE($item['message'])) ?></p><a class="club-text-link" href="mailto:<?= clubE($item['email']) ?>?subject=<?= rawurlencode('Re: ' . $item['subject']) ?>">Reply by email &rarr;</a></article><?php endforeach; ?></section>
-        <?php endif; ?>
+            <?php endif; ?>
+        </section>
     <?php endif; ?>
 </main>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

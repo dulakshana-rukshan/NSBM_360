@@ -9,7 +9,7 @@ $pageSubheading = 'Ideas worth exploring. Opportunities worth taking. Learing be
 
 
 // Lock page to News subcategories (Parent ID = 1000)
-$baseCategoryParentId = 4000; 
+$baseCategoryParentId = 6; 
 
 // Include template engine directly from the same folder
 include 'posts_template.php';

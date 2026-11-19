@@ -12,7 +12,7 @@ require_once __DIR__ . '/../config/database.php';
 $pageCSS = '../assets/css/page_style.css';
 
 // Events main section category ID (2000)
-$eventsParentId = 2000;
+$eventsParentId = 2;
 
 // 2. Capture filter inputs from the URL query string
 $searchKeyword = trim($_GET['search'] ?? '');
@@ -140,6 +140,36 @@ try {
     $allClubs = [];
 }
 
+function post_image_url(?string $path): string
+{
+    $fallback = 'https://placehold.co/400x200?text=No+Image';
+
+    if (empty(trim($path ?? ''))) {
+        return $fallback;
+    }
+
+    $path = trim(str_replace('\\', '/', $path));
+
+    // Already a complete URL
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    // Remove leading ../ or ./
+    $path = preg_replace('#^(\.\./|\./)+#', '', $path);
+
+    // Already contains project root
+    if (str_starts_with($path, '/NSBM_360/')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, 'NSBM_360/')) {
+        return '/' . $path;
+    }
+
+    return '/NSBM_360/' . ltrim($path, '/');
+}
+
 // Helper function to render grid and pagination markup
 function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPages) {
     $maxVisible = 4;
@@ -159,7 +189,11 @@ function renderPostsContent($posts, $totalPosts, $postsPerPage, $page, $totalPag
                 <div class="col">
                     <a href="news_details.php?id=<?= $post['post_id'] ?>" class="text-decoration-none h-100 d-block">
                         <div class="card h-100 card-hover-effect">
-                            <img src="<?= htmlspecialchars($post['cover_image'] ?? 'https://via.placeholder.com/400x200') ?>" class="card-img-top" alt="Event Cover">
+                            <img
+                                src="<?= htmlspecialchars(post_image_url($post['cover_image'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
+                                class="card-img-top"
+                                alt="Event Cover"
+                            >
                             <div class="card-body d-flex flex-column">
                                 <div class="mb-2 d-flex justify-content-between align-items-center gap-1 flex-wrap">
                                     <span class="badge bg-primary px-2 py-1 rounded"><?= htmlspecialchars($post['event_type_name']) ?></span>
@@ -346,48 +380,7 @@ include __DIR__ . '/../includes/navbar.php';
     }
     ?>
 
-    <section class="mt-5 pt-5 border-top">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold text-dark mb-1">Upcoming Sports & Tournament Highlights</h2>
-                <p class="text-muted small mb-0">Don't miss out on upcoming matches, tournaments, and athletic meets.</p>
-            </div>
-            <a href="sports.php" class="text-success text-decoration-none fw-semibold">Sports hub &rarr;</a>
-        </div>
-
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            <?php if (count($upcomingEvents) > 0): ?>
-                <?php foreach ($upcomingEvents as $ev): ?>
-                    <div class="col">
-                        <a href="news_details.php?id=<?= $ev['post_id'] ?>" class="text-decoration-none h-100 d-block">
-                            <div class="card h-100 card-hover-effect border-0 shadow-sm">
-                                <img src="<?= htmlspecialchars($ev['cover_image'] ?? 'https://via.placeholder.com/400x200') ?>" class="card-img-top" alt="Event Cover">
-                                <div class="card-body d-flex flex-column">
-                                    <div class="mb-2 d-flex justify-content-between align-items-center">
-                                        <span class="badge bg-success px-2 py-1 rounded">UPCOMING EVENT</span>
-                                        <span class="text-muted small fw-semibold"><?= date('d M Y', strtotime($ev['event_date'])) ?></span>
-                                    </div>
-                                    <h5 class="card-title fw-bold text-dark"><?= htmlspecialchars($ev['title']) ?></h5>
-                                    <p class="card-text text-muted small flex-grow-1"><?= htmlspecialchars($ev['summary']) ?></p>
-                                    <div class="mt-3 pt-2 border-top small text-muted">
-                                        <div><strong>Time:</strong> <?= date('h:i A', strtotime($ev['start_time'])) ?></div>
-                                        <div><strong>Venue:</strong> <?= htmlspecialchars($ev['venue']) ?></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12">
-                    <div class="card p-4 text-center bg-light border-0">
-                        <p class="text-muted mb-0">No upcoming sports events scheduled right now. Check back soon!</p>
-                    </div>
-                </div>
-            <?php endif; ?>
-        </div>
-    </section>
-
+    
 </main>
 
 <script>

@@ -13,14 +13,60 @@ function clubsEscape($value): string {
 }
 
 // Read an image path saved in the database. Block unsafe URL schemes.
+
 function clubsImagePath($value): string {
     $path = trim((string)($value ?? ''));
-    if ($path === '') return '';
-    if (preg_match('~^https?://~i', $path)) return $path;
-    if (str_starts_with($path, '//') || preg_match('~^[a-z][a-z0-9+.-]*:~i', $path)) return '';
-    if (str_contains($path, '..') || str_contains($path, '\\')) return '';
-    return $path;
+
+    if ($path === '') {
+        return '';
+    }
+
+    // Normalize Windows-style separators.
+    $path = str_replace('\\', '/', $path);
+
+    // Allow only HTTP/HTTPS external URLs.
+    if (preg_match('~^https?://~i', $path)) {
+        return $path;
+    }
+
+    // Block unsafe schemes and protocol-relative URLs.
+    if (
+        str_starts_with($path, '//') ||
+        preg_match('~^[a-z][a-z0-9+.-]*:~i', $path)
+    ) {
+        return '';
+    }
+
+    // Remove safe relative prefixes.
+    while (str_starts_with($path, '../') ||
+           str_starts_with($path, './')) {
+
+        if (str_starts_with($path, '../')) {
+            $path = substr($path, 3);
+        } else {
+            $path = substr($path, 2);
+        }
+    }
+
+    // Remove the project prefix if already included.
+    if (str_starts_with($path, '/NSBM_360/')) {
+        $path = substr($path, strlen('/NSBM_360/'));
+    }
+
+    $path = ltrim($path, '/');
+
+    // Allow only files inside the clubs uploads directory.
+    if (
+        !str_starts_with($path, 'uploads/clubs/') ||
+        str_contains($path, '..') ||
+        preg_match('/[?#\x00-\x1F\x7F]/', $path)
+    ) {
+        return '';
+    }
+
+    return '/NSBM_360/' . $path;
 }
+
 
 // 1. Read search, status, sorting and pagination parameters.
 $searchKeyword = trim((string)($_GET['search'] ?? ''));
@@ -95,7 +141,7 @@ function renderClubsContent(array $clubs, int $totalClubs, int $clubsPerPage, in
                 // 'logo' = small profile photo. 'banner_image' = large cover.
                 // If banner_image has not been added yet, show a styled fallback.
                 $logo = clubsImagePath($club['logo'] ?? '');
-                $banner = clubsImagePath($club['banner_image'] ?? '');
+                $banner = clubsImagePath($club['banner'] ?? '');
                 $name = (string)($club['club_name'] ?? 'Club');
                 $initials = strtoupper(substr($name, 0, 2));
                 $detailUrl = "club_detail.php?id=" . (int)$club['club_id'];
@@ -108,10 +154,11 @@ function renderClubsContent(array $clubs, int $totalClubs, int $clubsPerPage, in
            style="display: block; width: 100%; height: 100%;">
             <div class="club-banner-fallback" aria-hidden="true"></div>
             <?php if ($banner !== ''): ?>
-                <img src="../uploads/clubs/<?= clubsEscape($banner) ?>"
-                     alt="<?= clubsEscape($name) ?> banner"
-                     class="club-banner" loading="lazy"
-                     onerror="this.remove()">
+                <img src="<?= clubsEscape($banner) ?>"
+                alt="<?= clubsEscape($name) ?> banner"
+                class="club-banner"
+                loading="lazy"
+                onerror="this.remove()">
             <?php endif; ?>
         </a>
     </div>
@@ -122,10 +169,11 @@ function renderClubsContent(array $clubs, int $totalClubs, int $clubsPerPage, in
             <div class="club-avatar club-avatar--green-ring">
                 <span class="club-default-icon"><?= clubsEscape($initials) ?></span>
                 <?php if ($logo !== ''): ?>
-                    <img src="../uploads/clubs/<?= clubsEscape($logo) ?>"
-                         alt="<?= clubsEscape($name) ?> logo"
-                         class="club-profile-img" loading="lazy"
-                         onerror="this.style.display='none'">
+                    <img src="<?= clubsEscape($logo) ?>"
+                    alt="<?= clubsEscape($name) ?> logo"
+                    class="club-profile-img"
+                    loading="lazy"
+                    onerror="this.style.display='none'">
                 <?php endif; ?>
             </div>
             <div class="club-titles">

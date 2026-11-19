@@ -256,12 +256,26 @@ include __DIR__ . '/../includes/navbar.php';
             <?php if (!empty($announcement['image'])): ?>
 
                 <?php
-                $imagePath = trim($announcement['image']);
+                
+                    $imagePath = trim(str_replace('\\', '/', $announcement['image']));
 
-                // Handle paths saved relative to the project.
-                if (!preg_match('~^https?://~i', $imagePath)) {
-                    $imagePath = '/NSBM_360/' . ltrim($imagePath, '/');
-                }
+                    // Remove relative directory prefixes.
+                    while (str_starts_with($imagePath, '../')) {
+                        $imagePath = substr($imagePath, 3);
+                    }
+
+                    while (str_starts_with($imagePath, './')) {
+                        $imagePath = substr($imagePath, 2);
+                    }
+
+                    // Convert project-relative paths to absolute URLs.
+                    if (!preg_match('~^https?://~i', $imagePath)) {
+
+                        if (!str_starts_with($imagePath, '/NSBM_360/')) {
+                            $imagePath = '/NSBM_360/' . ltrim($imagePath, '/');
+                        }
+                    }
+
                 ?>
 
                 <div class="announcement-card-image">

@@ -160,6 +160,7 @@ $mainCategoryId = '';
 $subcategoryId = '';
 
 $selectedFacultyIds = [];
+$allFacultiesChecked = false;
 $selectedSportId = '';
 
 $status = 'draft';
@@ -213,26 +214,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // SELECTED FACULTIES
 
+    $allFacultiesChecked = ($_POST['all_faculties'] ?? '') === '1';
+
+    $validFacultyIds = array_map(
+        'intval',
+        array_column($faculties, 'faculty_id')
+    );
+
     $submittedFacultyIds = $_POST['faculty_ids'] ?? [];
 
-    if (is_array($submittedFacultyIds)) {
-
-        foreach ($submittedFacultyIds as $facultyId) {
-
-            $validFacultyId = filter_var(
-                $facultyId,
-                FILTER_VALIDATE_INT
-            );
-
-            if ($validFacultyId !== false && $validFacultyId > 0) {
-                $selectedFacultyIds[] = $validFacultyId;
-            }
-        }
+    if (!is_array($submittedFacultyIds)) {
+        $errors[] = 'Invalid faculty selection.';
+        $submittedFacultyIds = [];
     }
 
-    $selectedFacultyIds = array_values(
-        array_unique($selectedFacultyIds)
-    );
+    $selectedFacultyIds = $allFacultiesChecked
+        ? $validFacultyIds
+        : array_values(array_unique(array_map('intval', $submittedFacultyIds)));
 
 
     if (!csrf_is_valid()) {
@@ -1188,32 +1186,45 @@ require_once __DIR__ . '/president_header.php';
                     <label>Relevant Faculties</label>
 
                     <small>
-                        Select the faculties that this post is relevant to.
-                        You can select more than one.
+                        Select one or more faculties, or choose All Faculties.
                     </small>
 
-                    <div class="form-grid">
+                    <div class="faculty-selection">
 
-                        <?php foreach ($faculties as $faculty): ?>
+                        <label class="faculty-option faculty-all">
+                            <input
+                                type="checkbox"
+                                id="all_faculties"
+                                name="all_faculties"
+                                value="1"
+                                <?= $allFacultiesChecked ? 'checked' : '' ?>
+                            >
+                            <strong>All Faculties</strong>
+                        </label>
 
-                            <label>
+                        <div id="faculty-options">
 
-                                <input
-                                    type="checkbox"
-                                    name="faculty_ids[]"
-                                    value="<?= (int) $faculty['faculty_id'] ?>"
-                                    <?= in_array(
-                                        (int) $faculty['faculty_id'],
-                                        $selectedFacultyIds,
-                                        true
-                                    ) ? 'checked' : '' ?>
-                                >
+                            <?php foreach ($faculties as $faculty): ?>
 
-                                <?= e($faculty['faculty_name']) ?>
+                                <label class="faculty-option">
+                                    <input
+                                        type="checkbox"
+                                        class="faculty-checkbox"
+                                        name="faculty_ids[]"
+                                        value="<?= (int)$faculty['faculty_id'] ?>"
+                                        <?= in_array(
+                                            (int)$faculty['faculty_id'],
+                                            $selectedFacultyIds,
+                                            true
+                                        ) ? 'checked' : '' ?>
+                                    >
 
-                            </label>
+                                    <?= e($faculty['faculty_name']) ?>
+                                </label>
 
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+
+                        </div>
 
                     </div>
 
@@ -1325,6 +1336,51 @@ require_once __DIR__ . '/president_header.php';
     </main>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const allCheckbox = document.getElementById('all_faculties');
+    const facultyCheckboxes = document.querySelectorAll('.faculty-checkbox');
+
+    if (!allCheckbox) return;
+
+    function updateFacultySelection() {
+        facultyCheckboxes.forEach(checkbox => {
+            if (allCheckbox.checked) {
+                checkbox.checked = true;
+                checkbox.disabled = true;
+            } else {
+                checkbox.disabled = false;
+            }
+        });
+    }
+
+    allCheckbox.addEventListener('change', function () {
+        if (!this.checked) {
+            facultyCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        updateFacultySelection();
+    });
+
+    facultyCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const allSelected = Array.from(facultyCheckboxes)
+                .every(item => item.checked);
+
+            if (allSelected && facultyCheckboxes.length > 0) {
+                allCheckbox.checked = true;
+                updateFacultySelection();
+            }
+        });
+    });
+
+    updateFacultySelection();
+});
+</script>
 
 
 <script src="/NSBM_360/assets/js/president-create-post.js" defer></script>

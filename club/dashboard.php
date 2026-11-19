@@ -600,7 +600,7 @@ require_once __DIR__ . '/president_header.php';
 
                 <?php if (!empty($clubProfile['banner'])): ?>
                     <img
-                        src="/NSBM_360/<?= e(ltrim($clubProfile['banner'], '/')) ?>"
+                        src="/NSBM_360/<?= e(preg_replace('#^(\.\./|/)+#', '', $clubProfile['banner'])) ?>"
                         id="clubBannerImage"
                         alt="Club Banner"
                     >
@@ -629,15 +629,15 @@ require_once __DIR__ . '/president_header.php';
 
                 <div class="club-profile-logo">
 
-                    <label for="clubLogoInput"
-                           class="club-logo-edit"
-                           title="Change club logo">
+                    <label class="club-logo-edit"
+                            id="clubLogoEditBtn"
+                            title="View or edit club logo">
 
                         <?php if (!empty($clubProfile['logo'])): ?>
 
                             <img
                                 id="clubLogoPreview"
-                                src="/NSBM_360/<?= e(ltrim($clubProfile['logo'], '/')) ?>"
+                                src="/NSBM_360/<?= e(preg_replace('#^(\.\./|/)+#', '', $clubProfile['logo'])) ?>"
                                 alt="<?= e($clubName) ?> Logo"
                             >
 
@@ -904,6 +904,36 @@ require_once __DIR__ . '/president_header.php';
 
         </form>
 
+        <!-- CLUB LOGO EDITOR -->
+        <div class="logo-editor-modal" id="logoEditorModal" hidden>
+            <div class="logo-editor-box">
+                <h3>Adjust Club Logo</h3>
+                <p>Drag to reposition and zoom to fit the circle.</p>
+
+                <div class="logo-crop-circle" id="logoCropArea">
+                    <img id="logoCropImage" alt="Logo crop preview">
+                </div>
+                <button type="button" id="changeLogoBtn">
+                    <i class="bi bi-upload"></i>
+                    Upload New Logo
+                </button>                            
+                <label for="logoZoom">Zoom</label>
+                <input
+                    type="range"
+                    id="logoZoom"
+                    min="1"
+                    max="3"
+                    step="0.01"
+                    value="1"
+                >
+
+                <div class="logo-editor-actions">
+                    <button type="button" id="logoCancelBtn">Cancel</button>
+                    <button type="button" id="logoApplyBtn">Apply Logo</button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- STATISTICS -->
 
@@ -1069,7 +1099,7 @@ require_once __DIR__ . '/president_header.php';
                     <span>Create New Post</span>
                 </a>
 
-                <a href="create-event.php" class="quick-action-item">
+                <a href="create-post.php" class="quick-action-item">
                     <i class="bi bi-calendar-plus"></i>
                     <span>Create Event</span>
                 </a>

@@ -2,15 +2,46 @@
 <?php
 // --- NEWS DETAILS PAGE ---
 
-// 1. Connect to database using PDO
+//  Connect to database using PDO
 require_once __DIR__ . '/../config/database.php';
 
 $pageCSS = '../assets/css/news_details.css';
 
-// 2. Get the post ID from the URL safely
+function post_image_url(?string $path): string
+{
+    $fallback = 'https://placehold.co/800x450?text=No+Image';
+
+    if (empty(trim($path ?? ''))) {
+        return $fallback;
+    }
+
+    $path = trim(str_replace('\\', '/', $path));
+
+    // Full external URL
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    // Remove relative directory prefixes
+    $path = preg_replace('#^(\.\./|\./)+#', '', $path);
+
+    // Already has project folder
+    if (str_starts_with($path, '/NSBM_360/')) {
+        return $path;
+    }
+
+    if (str_starts_with($path, 'NSBM_360/')) {
+        return '/' . $path;
+    }
+
+    // Standard project-relative path
+    return '/NSBM_360/' . ltrim($path, '/');
+}
+
+// Get the post ID from the URL safely
 $post_id = isset($_GET['id']) ? intval($_GET['id']) : 1;
 
-// 3. Fetch article data using PDO prepared statements
+// Fetch article data using PDO prepared statements
 $sql = "SELECT p.*, 
                c.category_name, 
                CONCAT(u.first_name, ' ', u.last_name) AS author_name
@@ -30,7 +61,7 @@ try {
     $row = false;
 }
 
-// 4. Fallback if post is not found or unpublished
+// Fallback if post is not found or unpublished
 if (!$row) {
     $row = [
         "title" => "Story not found",
@@ -44,44 +75,101 @@ if (!$row) {
     ];
 }
 
-// 5. Configure Navbar Active Page based on category
-$categoryNameLower = strtolower(trim($row['category_name'] ?? 'news'));
+// Configure Navbar Active Page based on category
+$categoryId = (int)($row['category_id'] ?? 0);
 
-if (strpos($categoryNameLower, 'sport') !== false) {
-    $activePage = 'sports';
-} elseif (strpos($categoryNameLower, 'academic') !== false) {
-    $activePage = 'academics';
-} elseif (strpos($categoryNameLower, 'club') !== false) {
-    $activePage = 'clubs';
-} else {
-    $activePage = 'news';
+switch ($categoryId) {
+    case 1: // News
+        $activePage = 'news';
+        break;
+
+    case 2: // Events
+        $activePage = 'events';
+        break;
+
+    case 3: // Sports
+        $activePage = 'sports';
+        break;
+
+    case 6: // Academic
+        $activePage = 'academic';
+        break;
+
+    default:
+        $activePage = 'news';
+        break;
 }
 
 $pageCSS = '../assets/css/news_details.css';
 $pageTitle = htmlspecialchars($row['title']) . ' | NSBM 360';
 
-// 6. Include modular header and navbar
+// Include modular header and navbar
 include __DIR__ . '/../includes/header.php';
 include __DIR__ . '/../includes/navbar.php';
 
-// 7. Fetch Upcoming Event for Sidebar dynamically
+// Fetch Upcoming Event for Sidebar dynamically
 $event = null;
 
 try {
-    $eventSql = "SELECT * FROM events
-                 WHERE event_date >= CURDATE()
-                 ORDER BY event_date ASC
-                 LIMIT 1";
+    $eventSql = "
+    SELECT
+        e.*,
+        p.title AS post_title,
+        p.cover_image
+    FROM events e
+    INNER JOIN posts p ON e.post_id = p.post_id
+    WHERE e.event_date >= CURDATE()
+      AND TRIM(LOWER(p.status)) = 'published'
+      AND p.post_id != :current_post_id
+    ORDER BY e.event_date ASC
+    LIMIT 1
+";
 
-    $eventStmt = $pdo->query($eventSql);
-    $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
+$eventStmt = $pdo->prepare($eventSql);
+$eventStmt->execute([
+    'current_post_id' => $post_id
+]);
+
+$event = $eventStmt->fetch(PDO::FETCH_ASSOC);
+    
 
 } catch (PDOException $e) {
     error_log("Event Query Error: " . $e->getMessage());
     $event = null;
 }
 
-// 8. Safe fallbacks for display fields
+
+ // FETCH ADDITIONAL POST IMAGES
+
+$additionalImages = [];
+
+if ($row && !empty($row['post_id'])) {
+
+    try {
+
+        $imagesStmt = $pdo->prepare(
+            "SELECT image_id, image_path, alt_text
+             FROM post_images
+             WHERE post_id = :post_id
+             ORDER BY display_order ASC, image_id ASC"
+        );
+
+        $imagesStmt->execute([
+            'post_id' => (int) $row['post_id']
+        ]);
+
+        $additionalImages = $imagesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (PDOException $e) {
+
+        error_log("Additional Images Query Error: " . $e->getMessage());
+        $additionalImages = [];
+
+    }
+}
+
+
+// Safe fallbacks for display fields
 $authorName = !empty(trim($row['author_name'] ?? ''))
     ? $row['author_name']
     : 'NSBM Editorial';
@@ -127,7 +215,7 @@ $displayDate = !empty($row['published_at'])
                 <div class="author-details">
 
                     <span class="author-name">
-                        <?= htmlspecialchars($authorName) ?> · NSBM 360 Editorial
+                        <?= htmlspecialchars($authorName) ?> 
                     </span>
 
                     <span class="post-date">
@@ -151,11 +239,51 @@ $displayDate = !empty($row['published_at'])
             <div class="featured-image-container">
 
                 <img
-                    src="<?= htmlspecialchars(!empty($row['cover_image']) ? $row['cover_image'] : 'https://via.placeholder.com/800x450') ?>"
-                    alt="<?= htmlspecialchars($row['title']) ?>"
+                    src="<?= htmlspecialchars(post_image_url($row['cover_image'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars($row['title'], ENT_QUOTES, 'UTF-8') ?>"
                 >
 
             </div>
+
+            <!-- Additional Post Images -->
+
+            <?php if (!empty($additionalImages)): ?>
+
+                <div class="additional-images-section">
+
+                    <h3 class="additional-images-title">
+                        Photo Gallery
+                    </h3>
+
+                    <div class="additional-images-grid">
+
+                        <?php foreach ($additionalImages as $image): ?>
+
+                            <div class="additional-image-item">
+
+                                <img
+                                    src="<?= htmlspecialchars(
+                                        post_image_url($image['image_path']),
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                    alt="<?= htmlspecialchars(
+                                        $image['alt_text'] ?: $row['title'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                    loading="lazy"
+                                >
+
+                            </div>
+
+                        <?php endforeach; ?>
+
+                    </div>
+
+                </div>
+
+            <?php endif; ?>
 
             <!-- Article Body Content -->
             <div class="article-body">
@@ -184,7 +312,7 @@ $displayDate = !empty($row['published_at'])
 
                     <?php
                         $eventName = htmlspecialchars(
-                            $event['event_name'] ?? $event['title'] ?? 'Upcoming Event'
+                            $event['post_title'] ?? 'Upcoming Event'
                         );
 
                         $eventDate = !empty($event['event_date'])
@@ -201,12 +329,10 @@ $displayDate = !empty($row['published_at'])
                             : '';
 
                         $eventLocation = htmlspecialchars(
-                            $event['location'] ?? 'Green University Grounds'
+                            $event['venue'] ?? 'Venue TBA'
                         );
 
-                        $eventImage = !empty($event['image'])
-                            ? $event['image']
-                            : 'https://via.placeholder.com/300x160';
+                        $eventImage = post_image_url($event['cover_image'] ?? null);
 
                         $eventId = (int)($event['event_id'] ?? 1);
                     ?>
@@ -245,7 +371,7 @@ $displayDate = !empty($row['published_at'])
                         </p>
 
                         <a
-                            href="event_detail.php?id=<?= $eventId ?>"
+                            href="news_details.php?id=<?= (int)$event['post_id'] ?>"
                             class="btn-green"
                         >
                             View event details
@@ -261,7 +387,7 @@ $displayDate = !empty($row['published_at'])
                             UPCOMING EVENT
                         </span>
 
-                        <h3>No upcoming events right now</h3>
+                        <h3>No other upcoming events right now</h3>
 
                         <p>
                             Stay tuned for campus happenings and announcements.
@@ -284,7 +410,7 @@ $displayDate = !empty($row['published_at'])
                     and official updates, in one place.
                 </p>
 
-                <a href="#">
+                <a href="../index.php" >
                     Have a campus story? Get in touch →
                 </a>
 
@@ -357,7 +483,7 @@ $displayDate = !empty($row['published_at'])
                         <div class="card h-100 shadow-sm border-0">
 
                             <img
-                                src="<?= htmlspecialchars($exp['cover_image'] ?? 'https://via.placeholder.com/350x200') ?>"
+                                src="<?= htmlspecialchars(post_image_url($exp['cover_image'] ?? null), ENT_QUOTES, 'UTF-8') ?>"
                                 class="card-img-top"
                                 alt="Cover Image"
                                 style="height: 180px; object-fit: cover;"
@@ -428,7 +554,7 @@ $displayDate = !empty($row['published_at'])
 
 <?php
 
-// 9. Include footer from the /includes/ folder
+// Include footer from the /includes/ folder
 include __DIR__ . '/../includes/footer.php';
 
 ?>

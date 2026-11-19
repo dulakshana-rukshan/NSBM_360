@@ -133,7 +133,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
             $title         = trim($_POST['title'] ?? '');
             $categoryId    = (int) ($_POST['category_id'] ?? 0);
             $subcategoryId = !empty($_POST['subcategory_id']) ? (int) $_POST['subcategory_id'] : null;
-            $facultyId     = !empty($_POST['faculty_id']) ? (int) $_POST['faculty_id'] : null;
+            $allFaculties = ($_POST['all_faculties'] ?? '') === '1';
+
+            $validFacultyIds = array_map(
+                'intval',
+                array_column($faculties, 'faculty_id')
+            );
+
+            $submittedFacultyIds = $_POST['faculty_ids'] ?? [];
+
+            if (!is_array($submittedFacultyIds)) {
+                throw new Exception('Invalid faculty selection.');
+            }
+
+            $selectedFacultyIdsForSave = $allFaculties
+                ? $validFacultyIds
+                : array_values(array_unique(array_map('intval', $submittedFacultyIds)));
+
+            if (
+                empty($selectedFacultyIdsForSave) ||
+                array_diff($selectedFacultyIdsForSave, $validFacultyIds)
+            ) {
+                throw new Exception('Please select at least one valid faculty.');
+            }
+
+            // Keep the legacy column synchronized for single-faculty posts.
+            $facultyId = count($selectedFacultyIdsForSave) === 1
+                ? $selectedFacultyIdsForSave[0]
+                : null;
             $clubId        = !empty($_POST['club_id']) ? (int) $_POST['club_id'] : null;
             $sportId       = !empty($_POST['sport_id']) ? (int) $_POST['sport_id'] : null;
             $summary       = trim($_POST['summary'] ?? '');
@@ -208,8 +235,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $postAllowed) {
                 $postId = (int) $pdo->lastInsertId();
             }
 
+            // Save multiple faculty relationships
+            run_sql(
+                $pdo,
+                "DELETE FROM post_faculties WHERE post_id = ?",
+                [$postId]
+            );
+
+            $facultyInsert = $pdo->prepare("
+                INSERT INTO post_faculties (post_id, faculty_id)
+                VALUES (?, ?)
+            ");
+
+            foreach ($selectedFacultyIdsForSave as $facultyIdToSave) {
+                $facultyInsert->execute([$postId, $facultyIdToSave]);
+            }
+
             // Handle Additional Images Upload
             if (!empty($_FILES['additional_images']['name'][0])) {
+
+                $existingImageCount = count_sql(
+                    $pdo,
+                    "SELECT COUNT(*) FROM post_images WHERE post_id = ?",
+                    [$postId]
+                );
+
+                $newImageCount = count(array_filter(
+                    $_FILES['additional_images']['error'],
+                    static fn($error) => $error === UPLOAD_ERR_OK
+                ));
+
+                if ($existingImageCount + $newImageCount > 5) {
+                    throw new Exception(
+                        'Maximum 5 additional images are allowed per post.'
+                    );
+                }
+
                 $maxOrder = count_sql($pdo, "SELECT COALESCE(MAX(display_order), 0) FROM post_images WHERE post_id = ?", [$postId]);
                 foreach ($_FILES['additional_images']['name'] as $idx => $name) {
                     if ($_FILES['additional_images']['error'][$idx] === UPLOAD_ERR_OK) {
@@ -366,6 +427,44 @@ $selectedPost = (!isset($_GET['new']) && $selectedId > 0)
     : null;
 
 $selectedPostImages = $selectedPost ? rows($pdo, "SELECT * FROM post_images WHERE post_id = ? ORDER BY display_order ASC, image_id ASC", [$selectedPost['post_id']]) : [];
+
+$selectedFacultyIds = [];
+
+if ($selectedPost) {
+    $facultyRows = rows(
+        $pdo,
+        "SELECT faculty_id
+         FROM post_faculties
+         WHERE post_id = ?",
+        [(int) $selectedPost['post_id']]
+    );
+
+    $selectedFacultyIds = array_map(
+        'intval',
+        array_column($facultyRows, 'faculty_id')
+    );
+
+    // Support older posts saved using posts.faculty_id
+    if (
+        empty($selectedFacultyIds) &&
+        !empty($selectedPost['faculty_id'])
+    ) {
+        $selectedFacultyIds[] = (int) $selectedPost['faculty_id'];
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['action'] ?? '') === 'save_post'
+    && $error !== '') {
+    $selectedFacultyIds = $selectedFacultyIdsForSave
+        ?? $selectedFacultyIds;
+}
+
+$allFacultiesChecked = count($faculties) > 0
+    && count(array_intersect(
+        $selectedFacultyIds,
+        array_map('intval', array_column($faculties, 'faculty_id'))
+    )) === count($faculties);
 
 // ==========================================================================
 // Layout & Helper Functions
@@ -622,13 +721,50 @@ admin_header('Official News', 'Manage campus news, events, sports, academic noti
 
             <div class="field-row">
                 <div class="field field-half">
-                    <label>Faculty Selection</label>
-                    <select name="faculty_id">
-                        <option value="">All Faculties (General)</option>
-                        <?php foreach ($faculties as $fac): ?>
-                            <option value="<?= $fac['faculty_id'] ?>" <?= isset($selectedPost['faculty_id']) && $selectedPost['faculty_id'] == $fac['faculty_id'] ? 'selected' : '' ?>><?= e($fac['faculty_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label>Relevant Faculties *</label>
+
+                    <div class="faculty-selection">
+
+                        <!-- All Faculties -->
+                        <label class="faculty-option faculty-all">
+                            <input
+                                type="checkbox"
+                                id="all_faculties"
+                                name="all_faculties"
+                                value="1"
+                                <?= $allFacultiesChecked ? 'checked' : '' ?>
+                            >
+                            <strong>All Faculties</strong>
+                        </label>
+
+                        <!-- Individual Faculties -->
+                        <div id="faculty-options">
+
+                            <?php foreach ($faculties as $fac): ?>
+
+                                <label class="faculty-option">
+                                    <input
+                                        type="checkbox"
+                                        class="faculty-checkbox"
+                                        name="faculty_ids[]"
+                                        value="<?= (int) $fac['faculty_id'] ?>"
+                                        <?= in_array(
+                                            (int) $fac['faculty_id'],
+                                            $selectedFacultyIds,
+                                            true
+                                        ) ? 'checked' : '' ?>
+                                    >
+
+                                    <?= e($fac['faculty_name']) ?>
+                                </label>
+
+                            <?php endforeach; ?>
+
+                        </div>
+
+                    </div>
+
+                    <small>Select one or more faculties, or choose All Faculties.</small>
                 </div>
                 <div class="field field-half">
                     <label>Organizing Club / Related Club</label>
@@ -690,35 +826,104 @@ admin_header('Official News', 'Manage campus news, events, sports, academic noti
                 </div>
             </div>
 
+            
+            <!-- Modern Cover Image Upload -->
             <div class="field">
                 <label>Cover Image (optional)</label>
+
+                <div class="modern-upload-box" id="coverDropZone">
+                    <input
+                        type="file"
+                        id="coverImageInput"
+                        name="cover_image"
+                        accept="image/jpeg,image/png,image/webp"
+                        hidden
+                    >
+
+                    <div class="upload-placeholder" id="coverPlaceholder">
+                        <span class="upload-icon"></span>
+                        <strong>Choose a Cover Image</strong>
+                        <span>Click or drag an image here</span>
+                        <small>JPG, PNG, WEBP • Max 5 MB</small>
+                    </div>
+
+                    <div class="cover-preview-box" id="coverPreviewBox" hidden>
+                        <img id="coverPreview" alt="Selected cover image">
+                        <button
+                            type="button"
+                            id="removeCoverBtn"
+                            class="image-remove-btn"
+                        >×</button>
+                    </div>
+                </div>
+
                 <?php if (!empty($selectedPost['cover_image'])): ?>
-                    <div class="current-image-box">
-                        <img src="<?= e($selectedPost['cover_image']) ?>" alt="Cover" class="current-cover-preview">
-                        <span class="small">Current: <?= e(basename($selectedPost['cover_image'])) ?></span>
+                    <div class="existing-cover">
+                        <p class="small">Current Cover Image</p>
+                        <img
+                            src="<?= e($selectedPost['cover_image']) ?>"
+                            alt="Current Cover"
+                        >
+                        <small>Upload a new image to replace this cover.</small>
                     </div>
                 <?php endif; ?>
-                <input type="file" name="cover_image" accept="image/png, image/jpeg, image/webp">
             </div>
 
-            <!-- Uploaded Additional Images (Shown before the upload field) -->
+            <!-- Existing Additional Images -->
             <?php if (!empty($selectedPostImages)): ?>
                 <div class="field">
                     <label>Uploaded Additional Images</label>
+
                     <div class="additional-images-grid">
                         <?php foreach ($selectedPostImages as $img): ?>
                             <div class="additional-img-card">
-                                <img src="<?= e($img['image_path']) ?>" alt="Additional image">
-                                <button type="submit" form="delete-img-<?= (int)$img['image_id'] ?>" class="btn-remove-img">Remove</button>
+                                <img
+                                    src="<?= e($img['image_path']) ?>"
+                                    alt="Additional image"
+                                >
+
+                                <button
+                                    type="submit"
+                                    form="delete-img-<?= (int)$img['image_id'] ?>"
+                                    class="btn-remove-img"
+                                >
+                                    Remove
+                                </button>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php endif; ?>
 
+            <!-- Modern Additional Images Upload -->
             <div class="field">
-                <label>Additional Images (optional, multiple allowed)</label>
-                <input type="file" name="additional_images[]" accept="image/png, image/jpeg, image/webp" multiple>
+                <label>Additional Images (optional)</label>
+
+                <div class="modern-upload-box" id="galleryDropZone">
+                    <input
+                        type="file"
+                        id="additionalImagesInput"
+                        name="additional_images[]"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        hidden
+                    >
+
+                    <div class="upload-placeholder">
+                        <span class="upload-icon"></span>
+                        <strong>Add Gallery Images</strong>
+                        <span>Click or drag multiple images here</span>
+                        <small>Maximum 5 images • 5 MB each</small>
+                    </div>
+                </div>
+
+                <div class="gallery-preview-grid" id="galleryPreview"></div>
+
+                <p
+                    class="upload-feedback"
+                    id="imageUploadFeedback"
+                    role="status"
+                ></p>
             </div>
 
             <div class="field">
@@ -767,5 +972,227 @@ admin_header('Official News', 'Manage campus news, events, sports, academic noti
         <div class="info"><strong>Events Note</strong><br>Selecting the 'Events' category automatically reveals the venue and date/time fields required for event publication.</div>
     </aside>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const allCheckbox = document.getElementById('all_faculties');
+    const facultyCheckboxes = document.querySelectorAll('.faculty-checkbox');
+
+    if (!allCheckbox) return;
+
+    function updateFacultySelection() {
+        facultyCheckboxes.forEach(checkbox => {
+            if (allCheckbox.checked) {
+                checkbox.checked = true;
+                checkbox.disabled = true;
+            } else {
+                checkbox.disabled = false;
+            }
+        });
+    }
+
+    allCheckbox.addEventListener('change', function () {
+        if (!this.checked) {
+            facultyCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        updateFacultySelection();
+    });
+
+    facultyCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const allSelected = Array.from(facultyCheckboxes)
+                .every(item => item.checked);
+
+            if (allSelected && facultyCheckboxes.length > 0) {
+                allCheckbox.checked = true;
+                updateFacultySelection();
+            }
+        });
+    });
+
+    updateFacultySelection();
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const coverInput = document.getElementById('coverImageInput');
+    const coverZone = document.getElementById('coverDropZone');
+    const coverPreview = document.getElementById('coverPreview');
+    const coverPreviewBox = document.getElementById('coverPreviewBox');
+    const coverPlaceholder = document.getElementById('coverPlaceholder');
+    const removeCover = document.getElementById('removeCoverBtn');
+
+    const galleryInput = document.getElementById('additionalImagesInput');
+    const galleryZone = document.getElementById('galleryDropZone');
+    const galleryPreview = document.getElementById('galleryPreview');
+    const feedback = document.getElementById('imageUploadFeedback');
+
+    if (!coverInput || !galleryInput) return;
+
+    const maxSize = 5 * 1024 * 1024;
+    const maxImages = 5;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    const existingImages = document.querySelectorAll(
+        '.additional-img-card'
+    ).length;
+
+    let galleryFiles = [];
+    let coverUrl = null;
+    let galleryUrls = [];
+
+    function validImage(file) {
+        if (!allowedTypes.includes(file.type)) {
+            feedback.textContent = 'Only JPG, PNG and WEBP are allowed.';
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            feedback.textContent = `${file.name} exceeds 5 MB.`;
+            return false;
+        }
+
+        return true;
+    }
+
+    function setCover(file) {
+        feedback.textContent = '';
+        if (!validImage(file)) return;
+
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        coverInput.files = dt.files;
+
+        if (coverUrl) URL.revokeObjectURL(coverUrl);
+        coverUrl = URL.createObjectURL(file);
+
+        coverPreview.src = coverUrl;
+        coverPreviewBox.hidden = false;
+        coverPlaceholder.hidden = true;
+    }
+
+    coverZone.addEventListener('click', (event) => {
+        if (event.target.closest('#removeCoverBtn')) return;
+        coverInput.click();
+    });
+
+    coverInput.addEventListener('change', () => {
+        if (coverInput.files[0]) {
+            setCover(coverInput.files[0]);
+        }
+    });
+
+    removeCover.addEventListener('click', (event) => {
+        event.stopPropagation();
+
+        coverInput.value = '';
+        coverPreview.removeAttribute('src');
+
+        if (coverUrl) URL.revokeObjectURL(coverUrl);
+        coverUrl = null;
+
+        coverPreviewBox.hidden = true;
+        coverPlaceholder.hidden = false;
+    });
+
+    function syncGalleryInput() {
+        const dt = new DataTransfer();
+
+        galleryFiles.forEach(file => dt.items.add(file));
+        galleryInput.files = dt.files;
+    }
+
+    function renderGallery() {
+        galleryUrls.forEach(url => URL.revokeObjectURL(url));
+        galleryUrls = [];
+
+        galleryPreview.innerHTML = '';
+
+        galleryFiles.forEach((file, index) => {
+            const url = URL.createObjectURL(file);
+            galleryUrls.push(url);
+
+            const card = document.createElement('div');
+            card.className = 'gallery-preview-card';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = file.name;
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'image-remove-btn';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', 'Remove ' + file.name);
+
+            remove.addEventListener('click', () => {
+                galleryFiles.splice(index, 1);
+                syncGalleryInput();
+                renderGallery();
+            });
+
+            card.append(img, remove);
+            galleryPreview.appendChild(card);
+        });
+    }
+
+    function addGalleryFiles(files) {
+        feedback.textContent = '';
+
+        for (const file of files) {
+            if (!validImage(file)) continue;
+
+            if (existingImages + galleryFiles.length >= maxImages) {
+                feedback.textContent =
+                    'Maximum 5 additional images per post.';
+                break;
+            }
+
+            galleryFiles.push(file);
+        }
+
+        syncGalleryInput();
+        renderGallery();
+    }
+
+    galleryZone.addEventListener('click', () => {
+        galleryInput.click();
+    });
+
+    galleryInput.addEventListener('change', () => {
+        const selected = Array.from(galleryInput.files);
+        addGalleryFiles(selected);
+    });
+
+    function enableDrop(zone, handler) {
+        zone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            zone.classList.add('drag-active');
+        });
+
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-active');
+        });
+
+        zone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            zone.classList.remove('drag-active');
+            handler(Array.from(event.dataTransfer.files));
+        });
+    }
+
+    enableDrop(coverZone, files => {
+        if (files[0]) setCover(files[0]);
+    });
+
+    enableDrop(galleryZone, addGalleryFiles);
+});
+</script>
+
 
 <?php admin_footer(); ?>
